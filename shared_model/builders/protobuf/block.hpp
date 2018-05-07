@@ -19,11 +19,19 @@
 #define IROHA_PROTO_BLOCK_BUILDER_HPP
 
 #include "builders/protobuf/builder_templates/block_template.hpp"
+#include "builders/protobuf/builder_templates/empty_block_template.hpp"
 
 namespace shared_model {
   namespace proto {
 
     using BlockBuilder = TemplateBlockBuilder<>;
+
+  using EmptyBLockBuilder = TemplateEmptyBlockBuilder<>;
+
+    using UnsignedEmptyBlockBuilder = TemplateEmptyBlockBuilder<
+        0,
+        shared_model::validation::DefaultBlockValidator,
+        shared_model::proto::Block>;
 
     using UnsignedBlockBuilder =
         TemplateBlockBuilder<0,
