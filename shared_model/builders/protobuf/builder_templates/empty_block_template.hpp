@@ -40,7 +40,7 @@ namespace shared_model {
      * @tparam BT -- build type of built object returned by build method
      */
     template <int S = 0,
-              typename SV = validation::DefaultBlockValidator,
+              typename SV = validation::DefaultEmptyBlockValidator,
               typename BT = UnsignedWrapper<EmptyBlock>>
     class TemplateEmptyBlockBuilder {
      private:
@@ -50,12 +50,7 @@ namespace shared_model {
       template <int, typename, typename>
       friend class TemplateEmptyBlockBuilder;
 
-      enum RequiredFields {
-        Height,
-        PrevHash,
-        CreatedTime,
-        TOTAL
-      };
+      enum RequiredFields { Height, PrevHash, CreatedTime, TOTAL };
 
       template <int s>
       using NextBuilder = TemplateEmptyBlockBuilder<S | (1 << s), SV, BT>;
@@ -64,7 +59,8 @@ namespace shared_model {
       SV stateless_validator_;
 
       template <int Sp, typename SVp, typename BTp>
-      TemplateEmptyBlockBuilder(const TemplateEmptyBlockBuilder<Sp, SVp, BTp> &o)
+      TemplateEmptyBlockBuilder(
+          const TemplateEmptyBlockBuilder<Sp, SVp, BTp> &o)
           : block_(o.block_), stateless_validator_(o.stateless_validator_) {}
 
       /**

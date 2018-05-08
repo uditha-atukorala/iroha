@@ -15,21 +15,16 @@
  * limitations under the License.
  */
 
-#ifndef IROHA_PROTO_BLOCK_BUILDER_HPP
-#define IROHA_PROTO_BLOCK_BUILDER_HPP
+#ifndef IROHA_PROTO_EMPTY_BLOCK_BUILDER_HPP
+#define IROHA_PROTO_EMPTY_BLOCK_BUILDER_HPP
 
-#include "builders/protobuf/builder_templates/block_template.hpp"
+#include "builders/protobuf/builder_templates/empty_block_template.hpp"
 
-namespace shared_model {
-  namespace proto {
+using EmptyBlockBuilder = TemplateEmptyBlockBuilder<>;
 
-    using BlockBuilder = TemplateBlockBuilder<>;
+using UnsignedEmptyBlockBuilder = TemplateEmptyBlockBuilder<
+    0,
+    shared_model::validation::DefaultEmptyBlockValidator ,
+    shared_model::proto::Block>;
 
-    using UnsignedBlockBuilder =
-        TemplateBlockBuilder<0,
-                             shared_model::validation::DefaultBlockValidator,
-                             shared_model::proto::Block>;
-  }  // namespace proto
-}  // namespace shared_model
-
-#endif  // IROHA_PROTO_BLOCK_BUILDER_HPP
+#endif //IROHA_PROTO_EMPTY_BLOCK_BUILDER_HPP

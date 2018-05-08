@@ -15,21 +15,19 @@
  * limitations under the License.
  */
 
-#ifndef IROHA_PROTO_BLOCK_BUILDER_HPP
-#define IROHA_PROTO_BLOCK_BUILDER_HPP
+#include "builders/protobuf/builder_templates/empty_block_template.hpp"
+#include "module/shared_model/validators/validators.hpp"
 
-#include "builders/protobuf/builder_templates/block_template.hpp"
+#ifndef IROHA_TEST_EMPTY_BLOCK_BUILDER_HPP
+#define IROHA_TEST_EMPTY_BLOCK_BUILDER_HPP
 
-namespace shared_model {
-  namespace proto {
+/**
+ * Builder alias, to build shared model proto empty block object avoiding
+ * validation and "required fields" check
+ */
+using TestEmptyBlockBuilder = shared_model::proto::TemplateEmptyBlockBuilder<
+    (1 << shared_model::proto::TemplateEmptyBlockBuilder<>::total) - 1,
+    shared_model::validation::AlwaysValidValidator,
+    shared_model::proto::EmptyBlock>;
 
-    using BlockBuilder = TemplateBlockBuilder<>;
-
-    using UnsignedBlockBuilder =
-        TemplateBlockBuilder<0,
-                             shared_model::validation::DefaultBlockValidator,
-                             shared_model::proto::Block>;
-  }  // namespace proto
-}  // namespace shared_model
-
-#endif  // IROHA_PROTO_BLOCK_BUILDER_HPP
+#endif  // IROHA_TEST_EMPTY_BLOCK_BUILDER_HPP

@@ -32,9 +32,7 @@ namespace shared_model {
     /**
      * Class that validates blocks and proposal common fieds
      */
-    template <typename Iface,
-              typename FieldValidator,
-              typename TransactionValidator>
+    template <typename Iface, typename FieldValidator>
     class ContainerValidator {
      protected:
       void validateHeight(ReasonsGroupType &reason,
@@ -46,46 +44,22 @@ namespace shared_model {
           reason.second.push_back(message);
         }
       }
-      void validateTransaction(
-          ReasonsGroupType &reason,
-          const interface::Transaction &transaction) const {
-        auto answer = transaction_validator_.validate(transaction);
-        if (answer.hasErrors()) {
-          auto message = (boost::format("Tx: %s") % answer.reason()).str();
-          reason.second.push_back(message);
-        }
-      }
-      void validateTransactions(
-          ReasonsGroupType &reason,
-          const interface::types::TransactionsCollectionType &transactions)
-          const {
-        for (const auto &tx : transactions) {
-          validateTransaction(reason, *tx);
-        }
-      }
 
      public:
       ContainerValidator(
-          const TransactionValidator &transaction_validator =
-              TransactionValidator(),
           const FieldValidator &field_validator = FieldValidator())
-          : transaction_validator_(transaction_validator),
-            field_validator_(field_validator) {}
+          : field_validator_(field_validator) {}
       Answer validate(const Iface &cont, std::string reason_name) const {
         Answer answer;
         ReasonsGroupType reason;
         reason.first = reason_name;
         field_validator_.validateCreatedTime(reason, cont.createdTime());
         validateHeight(reason, cont.height());
-        validateTransactions(reason, cont.transactions());
         if (not reason.second.empty()) {
           answer.addReason(std::move(reason));
         }
         return answer;
       }
-
-     private:
-      TransactionValidator transaction_validator_;
 
      protected:
       FieldValidator field_validator_;

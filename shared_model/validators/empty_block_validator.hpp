@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-#ifndef IROHA_BLOCK_VALIDATOR_HPP
-#define IROHA_BLOCK_VALIDATOR_HPP
+#ifndef IROHA_EMPTY_BLOCK_VALIDATOR_HPP
+#define IROHA_EMPTY_BLOCK_VALIDATOR_HPP
 
 #include <boost/format.hpp>
 #include "datetime/time.hpp"
@@ -25,7 +25,6 @@
 #include "utils/polymorphic_wrapper.hpp"
 #include "validators/answer.hpp"
 #include "validators/container_validator.hpp"
-#include "validators/non_empty_container_validator.hpp"
 
 // TODO 22/01/2018 x3medima17: write stateless validator IR-837
 
@@ -35,11 +34,9 @@ namespace shared_model {
     /**
      * Class that validates block
      */
-    template <typename FieldValidator, typename TransactionValidator>
-    class BlockValidator
-        : public NonEmptyContainerValidator<interface::Block,
-                                            FieldValidator,
-                                            TransactionValidator> {
+    template <typename FieldValidator>
+    class EmptyBlockValidator
+        : public ContainerValidator<interface::Block, FieldValidator> {
      public:
       /**
        * Applies validation on block
@@ -47,14 +44,12 @@ namespace shared_model {
        * @return Answer containing found error if any
        */
       Answer validate(const interface::Block &block) const {
-        return NonEmptyContainerValidator<
-            interface::Block,
-            FieldValidator,
-            TransactionValidator>::validate(block, "Block");
+        return ContainerValidator<interface::Block, FieldValidator>::validate(
+            block, "EmptyBlock");
       }
     };
 
   }  // namespace validation
 }  // namespace shared_model
 
-#endif  // IROHA_BLOCK_VALIDATOR_HPP
+#endif  // IROHA_EMPTY_BLOCK_VALIDATOR_HPP

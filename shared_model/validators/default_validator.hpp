@@ -19,6 +19,7 @@
 #define IROHA_SHARED_MODEL_DEFAULT_VALIDATOR_HPP
 
 #include "validators/block_validator.hpp"
+#include "validators/empty_block_validator.hpp"
 #include "validators/field_validator.hpp"
 #include "validators/proposal_validator.hpp"
 #include "validators/query_validator.hpp"
@@ -37,6 +38,8 @@ namespace shared_model {
 
     using DefaultBlockValidator =
         BlockValidator<FieldValidator, DefaultTransactionValidator>;
+
+    using DefaultEmptyBlockValidator = EmptyBlockValidator<FieldValidator>;
 
     using DefaultSignableTransactionValidator =
         SignableModelValidator<DefaultTransactionValidator,
