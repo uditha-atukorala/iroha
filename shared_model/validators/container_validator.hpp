@@ -61,7 +61,7 @@ namespace shared_model {
         return answer;
       }
 
-     protected:
+     private:
       FieldValidator field_validator_;
     };
 
