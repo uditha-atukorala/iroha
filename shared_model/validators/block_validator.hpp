@@ -24,7 +24,6 @@
 #include "interfaces/iroha_internal/block.hpp"
 #include "utils/polymorphic_wrapper.hpp"
 #include "validators/answer.hpp"
-#include "validators/container_validator.hpp"
 #include "validators/non_empty_container_validator.hpp"
 
 // TODO 22/01/2018 x3medima17: write stateless validator IR-837

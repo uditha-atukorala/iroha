@@ -20,6 +20,7 @@
 #include "block.pb.h"
 #include "builders/protobuf/transport_builder.hpp"
 #include "module/shared_model/builders/protobuf/test_block_builder.hpp"
+#include "module/shared_model/builders/protobuf/test_empty_block_builder.hpp"
 #include "module/shared_model/builders/protobuf/test_proposal_builder.hpp"
 #include "module/shared_model/builders/protobuf/test_query_builder.hpp"
 #include "module/shared_model/builders/protobuf/test_transaction_builder.hpp"
@@ -94,6 +95,14 @@ class TransportBuilderTest : public ::testing::Test {
         .height(1)
         .prevHash(crypto::Hash("asd"))
         .createdTime(123)  // invalid time
+        .build();
+  }
+
+  auto createEmptyBlock() {
+    return TestEmptyBlockBuilder()
+        .height(1)
+        .prevHash(crypto::Hash("asd"))
+        .createdTime(created_time)
         .build();
   }
 
@@ -243,6 +252,17 @@ TEST_F(TransportBuilderTest, BlockCreationTest) {
 TEST_F(TransportBuilderTest, ProposalCreationTest) {
   auto orig_model = createProposal();
   testTransport<decltype(orig_model), validation::DefaultProposalValidator>(
+      orig_model,
+      [&orig_model](const Value<decltype(orig_model)> &model) {
+        ASSERT_EQ(model.value.getTransport().SerializeAsString(),
+                  orig_model.getTransport().SerializeAsString());
+      },
+      [](const Error<std::string> &) { FAIL(); });
+}
+
+TEST_F(TransportBuilderTest, EmptyBlockCreationTest) {
+  auto orig_model = createEmptyBlock();
+  testTransport<decltype(orig_model), validation::DefaultEmptyBlockValidator>(
       orig_model,
       [&orig_model](const Value<decltype(orig_model)> &model) {
         ASSERT_EQ(model.value.getTransport().SerializeAsString(),

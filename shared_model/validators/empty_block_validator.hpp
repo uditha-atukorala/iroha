@@ -36,16 +36,17 @@ namespace shared_model {
      */
     template <typename FieldValidator>
     class EmptyBlockValidator
-        : public ContainerValidator<interface::Block, FieldValidator> {
+        : public ContainerValidator<interface::EmptyBlock, FieldValidator> {
      public:
       /**
        * Applies validation on block
        * @param block
        * @return Answer containing found error if any
        */
-      Answer validate(const interface::Block &block) const {
-        return ContainerValidator<interface::Block, FieldValidator>::validate(
-            block, "EmptyBlock");
+      Answer validate(const interface::EmptyBlock &block) const {
+        return ContainerValidator<interface::EmptyBlock,
+                                  FieldValidator>::validate(block,
+                                                            "EmptyBlock");
       }
     };
 

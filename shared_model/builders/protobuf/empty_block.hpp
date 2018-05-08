@@ -20,11 +20,16 @@
 
 #include "builders/protobuf/builder_templates/empty_block_template.hpp"
 
-using EmptyBlockBuilder = TemplateEmptyBlockBuilder<>;
+namespace shared_model {
+  namespace proto {
 
-using UnsignedEmptyBlockBuilder = TemplateEmptyBlockBuilder<
-    0,
-    shared_model::validation::DefaultEmptyBlockValidator ,
-    shared_model::proto::Block>;
+    using EmptyBlockBuilder = TemplateEmptyBlockBuilder<>;
 
-#endif //IROHA_PROTO_EMPTY_BLOCK_BUILDER_HPP
+    using UnsignedEmptyBlockBuilder = TemplateEmptyBlockBuilder<
+        0,
+        shared_model::validation::DefaultEmptyBlockValidator,
+        shared_model::proto::Block>;
+  }  // namespace proto
+}  // namespace shared_model
+
+#endif  // IROHA_PROTO_EMPTY_BLOCK_BUILDER_HPP

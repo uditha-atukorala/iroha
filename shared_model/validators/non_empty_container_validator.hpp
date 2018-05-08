@@ -56,11 +56,11 @@ namespace shared_model {
               TransactionValidator(),
           const FieldValidator &field_validator = FieldValidator())
           : transaction_validator_(transaction_validator),
-            ContainerValidator<Iface, FieldValidator>::field_validator_(
-                field_validator) {}
+            field_validator_(field_validator) {}
 
      private:
       TransactionValidator transaction_validator_;
+      FieldValidator field_validator_;
     };
 
   }  // namespace validation
