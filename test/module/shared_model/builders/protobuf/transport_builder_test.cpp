@@ -260,6 +260,11 @@ TEST_F(TransportBuilderTest, ProposalCreationTest) {
       [](const Error<std::string> &) { FAIL(); });
 }
 
+/**
+ * @given valid proto object of empty block
+ * @when transport builder constructs model object from it
+ * @then original and built objects are equal
+ */
 TEST_F(TransportBuilderTest, EmptyBlockCreationTest) {
   auto orig_model = createEmptyBlock();
   testTransport<decltype(orig_model), validation::DefaultEmptyBlockValidator>(
