@@ -14,13 +14,11 @@
 #include "validators/answer.hpp"
 #include "validators/container_validator.hpp"
 
-// TODO 22/01/2018 x3medima17: write stateless validator IR-837
-
 namespace shared_model {
   namespace validation {
 
     /**
-     * Class that validates block
+     * Class that validates empty block
      */
     template <typename FieldValidator>
     class EmptyBlockValidator
