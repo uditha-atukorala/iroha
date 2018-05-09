@@ -38,6 +38,20 @@ namespace shared_model {
         }
       }
 
+      Answer validate(const Iface &cont, std::string reason_name) const {
+        Answer answer;
+        ReasonsGroupType reason;
+        reason.first = reason_name;
+        field_validator_.validateCreatedTime(reason, cont.createdTime());
+        ContainerValidator<Iface, FieldValidator>::validateHeight(
+            reason, cont.height());
+        validateTransactions(reason, cont.transactions());
+        if (not reason.second.empty()) {
+          answer.addReason(std::move(reason));
+        }
+        return answer;
+      }
+
      public:
       NonEmptyContainerValidator(
           const TransactionValidator &transaction_validator =

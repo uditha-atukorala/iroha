@@ -20,6 +20,7 @@
 
 #include <memory>
 #include <rxcpp/rx-observable.hpp>
+#include <cache/cache.hpp>
 #include "consensus/yac/yac_gate.hpp"
 #include "consensus/yac/yac_hash_provider.hpp"
 #include "logger/logger.hpp"
@@ -76,6 +77,8 @@ namespace iroha {
 
         std::pair<YacHash, std::shared_ptr<shared_model::interface::Block>>
             current_block_;
+
+        std::shared_ptr<network::ConsensusResultType> consensus_cache_ = nullptr;
       };
 
     }  // namespace yac
