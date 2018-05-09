@@ -33,6 +33,10 @@ namespace shared_model {
           ReasonsGroupType &reason,
           const interface::types::TransactionsCollectionType &transactions)
           const {
+        if (transactions.empty()) {
+          reason.second.push_back("Transactions can not be empty");
+          return;
+        }
         for (const auto &tx : transactions) {
           validateTransaction(reason, *tx);
         }
