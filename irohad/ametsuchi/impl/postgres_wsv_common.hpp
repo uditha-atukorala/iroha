@@ -109,6 +109,14 @@ namespace iroha {
     static inline shared_model::builder::BuilderResult<
         shared_model::interface::Account>
     makeAccount(const pqxx::row &row) noexcept {
+//      iroha::protocol::Account acc;
+//      acc.set_account_id(row.at("account_id").template as<std::string>());
+//      acc.set_domain_id(row.at("domain_id").template as<std::string>());
+//      acc.set_quorum(row.at("quorum")
+//                    .template as<shared_model::interface::types::QuorumType>());
+//      acc.set_json_data(row.at("data").template as<std::string>());
+
+//      return iroha::expected::makeValue(std::shared_ptr<shared_model::interface::Account>(new shared_model::proto::Account(std::move(acc))));
       return tryBuild([&row] {
         return shared_model::builder::DefaultAccountBuilder()
             .accountId(row.at("account_id").template as<std::string>())

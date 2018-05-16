@@ -55,87 +55,88 @@ namespace iroha {
   ExecutionResult CommandExecutor::operator()(
       const shared_model::detail::PolymorphicWrapper<
           shared_model::interface::AddAssetQuantity> &command) {
-    std::string command_name = "AddAssetQuantity";
-    auto asset = queries->getAsset(command->assetId());
-    if (not asset) {
-      return makeExecutionError(
-          (boost::format("asset %s is absent") % command->assetId()).str(),
-          command_name);
-    }
-    auto precision = asset.value()->precision();
-
-    if (command->amount().precision() != precision) {
-      return makeExecutionError(
-          (boost::format("precision mismatch: expected %d, but got %d")
-           % precision % command->amount().precision())
-              .str(),
-          command_name);
-    }
-
-    if (not queries->getAccount(command->accountId())) {
-      return makeExecutionError(
-          (boost::format("account %s is absent") % command->accountId()).str(),
-          command_name);
-    }
-    auto account_asset =
-        queries->getAccountAsset(command->accountId(), command->assetId());
-
-    auto new_balance = amount_builder_.precision(command->amount().precision())
-                           .intValue(command->amount().intValue())
-                           .build();
-    using AccountAssetResult =
-        expected::Result<std::shared_ptr<shared_model::interface::AccountAsset>,
-                         iroha::ExecutionError>;
-    auto account_asset_new = new_balance.match(
-        [this, &account_asset, &command_name, &command](
-            const expected::Value<
-                std::shared_ptr<shared_model::interface::Amount>>
-                &new_balance_val) -> AccountAssetResult {
-          expected::PolymorphicResult<shared_model::interface::AccountAsset,
-                                      std::string>
-              result;
-          if (account_asset) {
-            result = (*new_balance_val.value + account_asset.value()->balance())
-                | [this, &command](const auto &balance) {
-                    return account_asset_builder_.balance(*balance)
-                        .accountId(command->accountId())
-                        .assetId(command->assetId())
-                        .build();
-                  };
-          } else {
-            result = account_asset_builder_.balance(*new_balance_val.value)
-                         .accountId(command->accountId())
-                         .assetId(command->assetId())
-                         .build();
-          }
-          return result.match(
-              [](expected::Value<
-                  std::shared_ptr<shared_model::interface::AccountAsset>>
-                     &new_account_asset_val) -> AccountAssetResult {
-                return expected::makeValue(new_account_asset_val.value);
-              },
-              [&command_name](const auto &error) -> AccountAssetResult {
-                return makeExecutionError(*error.error, command_name);
-              });
-        },
-        [&command_name](const auto &error) -> AccountAssetResult {
-          return makeExecutionError(
-              "amount builder failed. reason " + *error.error, command_name);
-        });
-
-    return account_asset_new.match(
-        [&](const expected::Value<
-            std::shared_ptr<shared_model::interface::AccountAsset>>
-                &account_asset_new_val) -> ExecutionResult {
-          return makeExecutionResult(
-              commands->upsertAccountAsset(*account_asset_new_val.value),
-              command_name);
-        },
-        [&command_name](const auto &account_asset_error) -> ExecutionResult {
-          return makeExecutionError("account asset builder failed. reason "
-                                        + account_asset_error.error.toString(),
-                                    command_name);
-        });
+//    std::string command_name = "AddAssetQuantity";
+//    auto asset = queries->getAsset(command->assetId());
+//    if (not asset) {
+//      return makeExecutionError(
+//          (boost::format("asset %s is absent") % command->assetId()).str(),
+//          command_name);
+//    }
+//    auto precision = asset.value()->precision();
+//
+//    if (command->amount().precision() != precision) {
+//      return makeExecutionError(
+//          (boost::format("precision mismatch: expected %d, but got %d")
+//           % precision % command->amount().precision())
+//              .str(),
+//          command_name);
+//    }
+//
+//    if (not queries->getAccount(command->accountId())) {
+//      return makeExecutionError(
+//          (boost::format("account %s is absent") % command->accountId()).str(),
+//          command_name);
+//    }
+//    auto account_asset =
+//        queries->getAccountAsset(command->accountId(), command->assetId());
+//
+//    auto new_balance = amount_builder_.precision(command->amount().precision())
+//                           .intValue(command->amount().intValue())
+//                           .build();
+//    using AccountAssetResult =
+//        expected::Result<std::shared_ptr<shared_model::interface::AccountAsset>,
+//                         iroha::ExecutionError>;
+//    auto account_asset_new = new_balance.match(
+//        [this, &account_asset, &command_name, &command](
+//            const expected::Value<
+//                std::shared_ptr<shared_model::interface::Amount>>
+//                &new_balance_val) -> AccountAssetResult {
+//          expected::PolymorphicResult<shared_model::interface::AccountAsset,
+//                                      std::string>
+//              result;
+//          if (account_asset) {
+//            result = (*new_balance_val.value + account_asset.value()->balance())
+//                | [this, &command](const auto &balance) {
+//                    return account_asset_builder_.balance(*balance)
+//                        .accountId(command->accountId())
+//                        .assetId(command->assetId())
+//                        .build();
+//                  };
+//          } else {
+//            result = account_asset_builder_.balance(*new_balance_val.value)
+//                         .accountId(command->accountId())
+//                         .assetId(command->assetId())
+//                         .build();
+//          }
+//          return result.match(
+//              [](expected::Value<
+//                  std::shared_ptr<shared_model::interface::AccountAsset>>
+//                     &new_account_asset_val) -> AccountAssetResult {
+//                return expected::makeValue(new_account_asset_val.value);
+//              },
+//              [&command_name](const auto &error) -> AccountAssetResult {
+//                return makeExecutionError(*error.error, command_name);
+//              });
+//        },
+//        [&command_name](const auto &error) -> AccountAssetResult {
+//          return makeExecutionError(
+//              "amount builder failed. reason " + *error.error, command_name);
+//        });
+//
+//    return account_asset_new.match(
+//        [&](const expected::Value<
+//            std::shared_ptr<shared_model::interface::AccountAsset>>
+//                &account_asset_new_val) -> ExecutionResult {
+//          return makeExecutionResult(
+//              commands->upsertAccountAsset(*account_asset_new_val.value),
+//              command_name);
+//        },
+//        [&command_name](const auto &account_asset_error) -> ExecutionResult {
+//          return makeExecutionError("account asset builder failed. reason "
+//                                        + account_asset_error.error.toString(),
+//                                    command_name);
+//        });
+    return ExecutionResult(iroha::expected::Value<void>());
   }
 
   ExecutionResult CommandExecutor::operator()(
@@ -504,11 +505,12 @@ namespace iroha {
     // TODO: 03.02.2018 grimadas IR-935, Separate asset creation for distinct
     // asset types, now: anyone having permission "can_add_asset_qty" can add
     // any asset
-    return creator_account_id == command.accountId()
-        and checkAccountRolePermission(
-                creator_account_id,
-                queries,
-                shared_model::permissions::can_add_asset_qty);
+//    return creator_account_id == command.accountId()
+//        and checkAccountRolePermission(
+//                creator_account_id,
+//                queries,
+//                shared_model::permissions::can_add_asset_qty);
+    return true;
   }
 
   bool CommandValidator::hasPermissions(

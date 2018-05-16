@@ -70,11 +70,13 @@ namespace iroha {
       };
 
       transaction_->exec("SAVEPOINT savepoint_;");
+      log_->info("Executing block transactions");
       auto result = function(block, *wsv_, top_hash_)
           and std::all_of(block.transactions().begin(),
                           block.transactions().end(),
                           execute_transaction);
 
+      log_->info("block store insert");
       if (result) {
         block_store_.insert(std::make_pair(block.height(), clone(block)));
         block_index_->index(block);
@@ -84,6 +86,7 @@ namespace iroha {
       } else {
         transaction_->exec("ROLLBACK TO SAVEPOINT savepoint_;");
       }
+      log_->info("block store insert done");
       return result;
     }
 

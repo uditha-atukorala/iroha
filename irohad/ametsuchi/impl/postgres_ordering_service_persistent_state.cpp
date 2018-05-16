@@ -92,7 +92,9 @@ namespace iroha {
                  "INSERT INTO ordering_service_state "
                  "VALUES ("
                  + postgres_transaction_->quote(height) + ");")
-          .match([](expected::Value<pqxx::result> v) -> bool { return true; },
+          .match([&](expected::Value<pqxx::result> v) -> bool {
+             log_->info("Proposal height saved");
+            return true; },
                  [&](expected::Error<std::string> e) -> bool {
                    log_->error(e.error);
                    return false;

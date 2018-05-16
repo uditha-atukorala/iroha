@@ -66,10 +66,12 @@ namespace iroha {
         const shared_model::interface::Proposal &proposal) {
       log_->info("process proposal");
       // Get last block from local ledger
+      log_->info("Getting top block");
       block_queries_->getTopBlocks(1)
           .subscribe_on(rxcpp::observe_on_new_thread())
           .as_blocking()
           .subscribe([this](auto block) { last_block = block; });
+      log_->info("Received top block");
       if (not last_block) {
         log_->warn("Could not fetch last block");
         return;
@@ -80,12 +82,16 @@ namespace iroha {
                    proposal.height());
         return;
       }
+      log_->info("Creating temporary wsv");
       auto temporaryStorageResult = ametsuchi_factory_->createTemporaryWsv();
+      log_->info("created temporary wsv");
       temporaryStorageResult.match(
           [&](expected::Value<std::unique_ptr<ametsuchi::TemporaryWsv>>
                   &temporaryStorage) {
+            log_->info("match done");
             auto validated_proposal =
                 validator_->validate(proposal, *temporaryStorage.value);
+            log_->info("validated");
             notifier_.get_subscriber().on_next(validated_proposal);
           },
           [&](expected::Error<std::string> &error) {
@@ -108,6 +114,7 @@ namespace iroha {
               return static_cast<const shared_model::proto::Transaction &>(
                   *polymorphic_tx);
             });
+      log_->info("building block");
       auto block = std::make_shared<shared_model::proto::Block>(
           shared_model::proto::UnsignedBlockBuilder()
               .height(proposal.height())
@@ -115,6 +122,7 @@ namespace iroha {
               .transactions(proto_txs)
               .createdTime(proposal.createdTime())
               .build());
+      log_->info("finished building block");
 
       crypto_signer_->sign(*block);
 

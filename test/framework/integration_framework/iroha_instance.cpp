@@ -33,7 +33,7 @@ namespace integration_framework {
         pg_conn_(getPostgreCredsOrDefault()),
         torii_port_(11501),
         internal_port_(50541),
-        proposal_delay_(5000ms),
+        proposal_delay_(1h),
         vote_delay_(5000ms),
         load_delay_(5000ms) {}
 

@@ -10,3 +10,14 @@ add_executable(benchmark_example
 target_link_libraries(benchmark_example
     benchmark
     )
+
+add_executable(pipeline_benchmark
+        pipeline_benchmark.cpp)
+
+target_link_libraries(pipeline_benchmark
+        benchmark
+        application
+        raw_block_loader
+        integration_framework
+        shared_model_stateless_validation
+    )

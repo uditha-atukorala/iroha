@@ -54,22 +54,31 @@ namespace iroha {
                     });
       };
 
+      std::chrono::steady_clock::duration total_time;
       // Filter only valid transactions
-      auto filter = [&temporaryWsv, checking_transaction](auto &acc,
-                                                          const auto &tx) {
+      auto filter = [&temporaryWsv, checking_transaction, &total_time](
+                        auto &acc, const auto &tx) {
+        auto start = std::chrono::steady_clock::now();
         auto answer =
             temporaryWsv.apply(*(tx.operator->()), checking_transaction);
+        auto delta = std::chrono::steady_clock::now() - start;
+        total_time += delta;
+
         if (answer) {
           acc.push_back(tx);
         }
         return acc;
       };
 
+      log_->info("filtering");
       auto &txs = proposal.transactions();
       decltype(txs) valid = {};
 
       auto valid_txs = std::accumulate(txs.begin(), txs.end(), valid, filter);
-
+      log_->info(
+          "total answer: {}",
+          std::chrono::duration_cast<std::chrono::milliseconds>(total_time).count());
+      log_->info("done filtering");
       // TODO: kamilsa IR-1010 20.02.2018 rework validation logic, so that this
       // cast is not needed and stateful validator does not know about the
       // transport
@@ -79,6 +88,7 @@ namespace iroha {
               return static_cast<const shared_model::proto::Transaction &>(
                   *polymorphic_tx.operator->());
             });
+      log_->info("start building proposal");
       auto validated_proposal = shared_model::proto::ProposalBuilder()
                                     .createdTime(proposal.createdTime())
                                     .height(proposal.height())

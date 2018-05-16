@@ -69,14 +69,19 @@ namespace iroha {
 
     expected::Result<std::unique_ptr<TemporaryWsv>, std::string>
     StorageImpl::createTemporaryWsv() {
+      log_->info("opening postgres connection");
       auto postgres_connection =
           std::make_unique<pqxx::lazyconnection>(postgres_options_);
       try {
         postgres_connection->activate();
+        postgres_connection->prepare(
+            "get_account",
+            "SELECT * FROM account WHERE account_id = $1");
       } catch (const pqxx::broken_connection &e) {
         return expected::makeError(
             (boost::format(kPsqlBroken) % e.what()).str());
       }
+      log_->info("opened postgres connection");
       auto wsv_transaction =
           std::make_unique<pqxx::nontransaction>(*postgres_connection, kTmpWsv);
 

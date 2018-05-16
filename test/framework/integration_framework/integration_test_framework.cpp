@@ -201,8 +201,10 @@ namespace integration_framework {
     log_->info("check proposal");
     // fetch first proposal from proposal queue
     ProposalType proposal;
+    log_->info("fetching from queue");
     fetchFromQueue(
         proposal_queue_, proposal, proposal_waiting, "missed proposal");
+    log_->info("validating proposal");
     validation(proposal);
     return *this;
   }
