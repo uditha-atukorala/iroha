@@ -44,7 +44,7 @@ namespace iroha {
       auto command = std::make_shared<PostgresWsvCommand>(*transaction_);
       command_executor_ =
           std::make_shared<CommandExecutor>(CommandExecutor(query, command));
-      transaction_->exec("BEGIN;");
+      execute(*transaction_, "BEGIN;");
     }
 
     bool MutableStorageImpl::apply(
@@ -69,7 +69,7 @@ namespace iroha {
                            execute_command);
       };
 
-      transaction_->exec("SAVEPOINT savepoint_;");
+      execute(*transaction_, "SAVEPOINT savepoint_;");
       auto result = function(block, *wsv_, top_hash_)
           and std::all_of(block.transactions().begin(),
                           block.transactions().end(),
@@ -80,16 +80,16 @@ namespace iroha {
         block_index_->index(block);
 
         top_hash_ = block.hash();
-        transaction_->exec("RELEASE SAVEPOINT savepoint_;");
+        execute(*transaction_, "RELEASE SAVEPOINT savepoint_;");
       } else {
-        transaction_->exec("ROLLBACK TO SAVEPOINT savepoint_;");
+        execute(*transaction_, "ROLLBACK TO SAVEPOINT savepoint_;");
       }
       return result;
     }
 
     MutableStorageImpl::~MutableStorageImpl() {
       if (not committed) {
-        transaction_->exec("ROLLBACK;");
+        execute(*transaction_, "ROLLBACK;");
       }
     }
   }  // namespace ametsuchi

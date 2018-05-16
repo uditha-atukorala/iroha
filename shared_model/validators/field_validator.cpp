@@ -46,22 +46,23 @@ namespace shared_model {
         R"([A-Za-z0-9_]{1,64})";
     const std::string FieldValidator::role_id_pattern_ = R"#([a-z_0-9]{1,32})#";
 
+    const std::regex FieldValidator::account_name_regex_(FieldValidator::account_name_pattern_);
+    const std::regex FieldValidator::asset_name_regex_(FieldValidator::asset_name_pattern_);
+    const std::regex FieldValidator::domain_regex_(FieldValidator::domain_pattern_);
+    const std::regex FieldValidator::ip_v4_regex_(FieldValidator::ip_v4_pattern_);
+    const std::regex FieldValidator::peer_address_regex_(FieldValidator::peer_address_pattern_);
+    const std::regex FieldValidator::account_id_regex_(FieldValidator::account_id_pattern_);
+    const std::regex FieldValidator::asset_id_regex_(FieldValidator::asset_id_pattern_);
+    const std::regex FieldValidator::detail_key_regex_(FieldValidator::detail_key_pattern_);
+    const std::regex FieldValidator::role_id_regex_(FieldValidator::role_id_pattern_);
+
     const size_t FieldValidator::public_key_size = 32;
     /// limit for the set account detail size in bytes
     const size_t FieldValidator::value_size = 4 * 1024 * 1024;
     const size_t FieldValidator::description_size = 64;
 
     FieldValidator::FieldValidator(time_t future_gap)
-        : account_name_regex_(account_name_pattern_),
-          asset_name_regex_(asset_name_pattern_),
-          domain_regex_(domain_pattern_),
-          ip_v4_regex_(ip_v4_pattern_),
-          peer_address_regex_(peer_address_pattern_),
-          account_id_regex_(account_id_pattern_),
-          asset_id_regex_(asset_id_pattern_),
-          detail_key_regex_(detail_key_pattern_),
-          role_id_regex_(role_id_pattern_),
-          future_gap_(future_gap) {}
+          : future_gap_(future_gap) {}
 
     void FieldValidator::validateAccountId(
         ReasonsGroupType &reason,

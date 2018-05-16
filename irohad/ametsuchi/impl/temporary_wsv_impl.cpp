@@ -35,7 +35,7 @@ namespace iroha {
       auto command = std::make_shared<PostgresWsvCommand>(*transaction_);
       command_executor_ = std::make_shared<CommandExecutor>(query, command);
       command_validator_ = std::make_shared<CommandValidator>(query);
-      transaction_->exec("BEGIN;");
+      execute(*transaction_, "BEGIN;");
     }
 
     bool TemporaryWsvImpl::apply(
@@ -58,21 +58,21 @@ namespace iroha {
                             });
       };
 
-      transaction_->exec("SAVEPOINT savepoint_;");
+      execute(*transaction_, "SAVEPOINT savepoint_;");
       auto result =
           apply_function(tx, *wsv_)
           and std::all_of(
                   tx.commands().begin(), tx.commands().end(), execute_command);
       if (result) {
-        transaction_->exec("RELEASE SAVEPOINT savepoint_;");
+        execute(*transaction_, "RELEASE SAVEPOINT savepoint_;");
       } else {
-        transaction_->exec("ROLLBACK TO SAVEPOINT savepoint_;");
+        execute(*transaction_, "ROLLBACK TO SAVEPOINT savepoint_;");
       }
       return result;
     }
 
     TemporaryWsvImpl::~TemporaryWsvImpl() {
-      transaction_->exec("ROLLBACK;");
+      execute(*transaction_, "ROLLBACK;");
     }
   }  // namespace ametsuchi
 }  // namespace iroha

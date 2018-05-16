@@ -24,6 +24,7 @@
 #include "ametsuchi/impl/temporary_wsv_impl.hpp"
 #include "converters/protobuf/json_proto_converter.hpp"
 #include "postgres_ordering_service_persistent_state.hpp"
+#include "ametsuchi/impl/postgres_wsv_common.hpp"
 
 namespace iroha {
   namespace ametsuchi {
@@ -62,9 +63,8 @@ namespace iroha {
                                                        *block_store_)) {
       log_ = logger::log("StorageImpl");
 
-      wsv_transaction_->exec(init_);
-      wsv_transaction_->exec(
-          "SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY;");
+      execute(*wsv_transaction_, init_);
+      execute(*wsv_transaction_, "SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY;");
     }
 
     expected::Result<std::unique_ptr<TemporaryWsv>, std::string>
@@ -185,12 +185,12 @@ DROP TABLE IF EXISTS index_by_id_height_asset;
       // erase db
       log_->info("drop dp");
       pqxx::connection connection(postgres_options_);
-      pqxx::work txn(connection);
-      txn.exec(drop);
+      pqxx::nontransaction txn(connection);
+      execute(txn, drop);
       txn.commit();
 
-      pqxx::work init_txn(connection);
-      init_txn.exec(init_);
+      pqxx::nontransaction init_txn(connection);
+      execute(init_txn, init_);
       init_txn.commit();
 
       // erase blocks
@@ -261,8 +261,7 @@ DROP TABLE IF EXISTS index_by_id_height_asset;
                 *std::static_pointer_cast<shared_model::proto::Block>(
                     block.second))));
       }
-
-      storage->transaction_->exec("COMMIT;");
+      execute(*storage->transaction_, "COMMIT;");
       storage->committed = true;
     }
 

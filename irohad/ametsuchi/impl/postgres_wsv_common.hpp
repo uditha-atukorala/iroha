@@ -64,7 +64,8 @@ namespace iroha {
       return [&](const std::string &statement) noexcept
           ->boost::optional<pqxx::result> {
         try {
-          return transaction.exec(statement);
+          auto val = execute(transaction, statement);
+          return val;
         } catch (const std::exception &e) {
           logger->error(e.what());
           return boost::none;
