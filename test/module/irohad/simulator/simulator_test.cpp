@@ -118,12 +118,12 @@ TEST_F(SimulatorTest, ValidWhenPreviousBlock) {
                 .signAndAddSignature(
                     shared_model::crypto::DefaultCryptoAlgorithmType::
                         generateKeypair());
-  std::vector<shared_model::proto::Transaction> txs = {tx, tx};
+  std::vector<shared_model::proto::Transaction> txs = {tx};
   auto proposal = std::make_shared<shared_model::proto::Proposal>(
       shared_model::proto::ProposalBuilder()
           .height(2)
           .createdTime(iroha::time::now())
-          .transactions(txs)
+          .transactions(std::move(txs))
           .build());
   shared_model::proto::Block block = makeBlock(proposal->height() - 1);
 
@@ -146,7 +146,7 @@ TEST_F(SimulatorTest, ValidWhenPreviousBlock) {
 
   auto proposal_wrapper =
       make_test_subscriber<CallExact>(simulator->on_verified_proposal(), 1);
-  proposal_wrapper.subscribe([&proposal](auto verified_proposal) {
+  proposal_wrapper.subscribe([&proposal](const auto& verified_proposal) {
     ASSERT_EQ(verified_proposal->height(), proposal->height());
     ASSERT_EQ(verified_proposal->transactions(), proposal->transactions());
   });

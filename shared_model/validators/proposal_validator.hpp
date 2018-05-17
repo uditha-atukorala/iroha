@@ -24,6 +24,8 @@
 #include "interfaces/common_objects/types.hpp"
 #include "interfaces/iroha_internal/proposal.hpp"
 #include "validators/answer.hpp"
+#include "validators/container_fields/height_validator.hpp"
+#include "validators/container_fields/non_empty_transactions_validator.hpp"
 
 // TODO 22/01/2018 x3medima17: write stateless validator IR-836
 
@@ -35,9 +37,8 @@ namespace shared_model {
      */
     template <typename FieldValidator, typename TransactionValidator>
     class ProposalValidator
-        : public NonEmptyContainerValidator<interface::Proposal,
-                                            FieldValidator,
-                                            TransactionValidator> {
+        : public HeightValidator,
+          public NonEmptyTransactionsValidator<TransactionValidator> {
      public:
       /**
        * Applies validation on proposal
@@ -45,11 +46,24 @@ namespace shared_model {
        * @return Answer containing found error if any
        */
       Answer validate(const interface::Proposal &prop) const {
-        return NonEmptyContainerValidator<
-            interface::Proposal,
-            FieldValidator,
-            TransactionValidator>::validate(prop, "Proposal");
+        using TransactionsValidator =
+        NonEmptyTransactionsValidator<TransactionValidator>;
+
+        Answer answer;
+        ReasonsGroupType reason;
+        reason.first = "Proposal";
+        field_validator_.validateCreatedTime(
+            reason, prop.createdTime());
+        HeightValidator::validateHeight(reason, prop.height());
+        TransactionsValidator::validateTransactions(reason, prop.transactions());
+        if (not reason.second.empty()) {
+          answer.addReason(std::move(reason));
+        }
+        return answer;
       }
+
+     private:
+      FieldValidator field_validator_;
     };
 
   }  // namespace validation

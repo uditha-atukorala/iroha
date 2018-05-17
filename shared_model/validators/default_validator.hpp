@@ -25,6 +25,7 @@
 #include "validators/query_validator.hpp"
 #include "validators/signable_validator.hpp"
 #include "validators/transaction_validator.hpp"
+#include "validators/verified_proposal_validator.hpp"
 
 namespace shared_model {
   namespace validation {
@@ -35,6 +36,9 @@ namespace shared_model {
         QueryValidator<FieldValidator, QueryValidatorVisitor<FieldValidator>>;
     using DefaultProposalValidator =
         ProposalValidator<FieldValidator, DefaultTransactionValidator>;
+
+    using DefaultVerifiedProposalValidator =
+        VerifiedProposalValidator<FieldValidator, DefaultTransactionValidator>;
 
     using DefaultBlockValidator =
         BlockValidator<FieldValidator, DefaultTransactionValidator>;

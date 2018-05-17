@@ -12,7 +12,7 @@
 #include "interfaces/iroha_internal/block.hpp"
 #include "utils/polymorphic_wrapper.hpp"
 #include "validators/answer.hpp"
-#include "validators/container_validator.hpp"
+#include "validators/container_fields/height_validator.hpp"
 
 namespace shared_model {
   namespace validation {
@@ -21,19 +21,29 @@ namespace shared_model {
      * Class that validates empty block
      */
     template <typename FieldValidator>
-    class EmptyBlockValidator
-        : public ContainerValidator<interface::EmptyBlock, FieldValidator> {
+    class EmptyBlockValidator : public HeightValidator {
      public:
+      EmptyBlockValidator(FieldValidator field_validator = FieldValidator())
+          : field_validator_(field_validator) {}
       /**
        * Applies validation on block
        * @param block
        * @return Answer containing found error if any
        */
       Answer validate(const interface::EmptyBlock &block) const {
-        return ContainerValidator<interface::EmptyBlock,
-                                  FieldValidator>::validate(block,
-                                                            "EmptyBlock");
+        Answer answer;
+        ReasonsGroupType reason;
+        reason.first = "EmptyBlock";
+        field_validator_.validateCreatedTime(reason, block.createdTime());
+        HeightValidator::validateHeight(reason, block.height());
+        if (not reason.second.empty()) {
+          answer.addReason(std::move(reason));
+        }
+        return answer;
       }
+
+     private:
+      FieldValidator field_validator_;
     };
 
   }  // namespace validation

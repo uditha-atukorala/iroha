@@ -24,7 +24,8 @@
 #include "interfaces/iroha_internal/block.hpp"
 #include "utils/polymorphic_wrapper.hpp"
 #include "validators/answer.hpp"
-#include "validators/non_empty_container_validator.hpp"
+#include "validators/container_fields/height_validator.hpp"
+#include "validators/container_fields/non_empty_transactions_validator.hpp"
 
 // TODO 22/01/2018 x3medima17: write stateless validator IR-837
 
@@ -36,21 +37,38 @@ namespace shared_model {
      */
     template <typename FieldValidator, typename TransactionValidator>
     class BlockValidator
-        : public NonEmptyContainerValidator<interface::Block,
-                                            FieldValidator,
-                                            TransactionValidator> {
+        : public HeightValidator,
+          public NonEmptyTransactionsValidator<TransactionValidator> {
      public:
+      BlockValidator(FieldValidator field_validator = FieldValidator())
+          : field_validator_(field_validator),
+            NonEmptyTransactionsValidator<TransactionValidator>(
+                TransactionValidator(field_validator_)) {}
+
       /**
        * Applies validation on block
        * @param block
        * @return Answer containing found error if any
        */
       Answer validate(const interface::Block &block) const {
-        return NonEmptyContainerValidator<
-            interface::Block,
-            FieldValidator,
-            TransactionValidator>::validate(block, "Block");
+        using TransactionsValidator =
+            NonEmptyTransactionsValidator<TransactionValidator>;
+
+        Answer answer;
+        ReasonsGroupType reason;
+        reason.first = "Block";
+        field_validator_.validateCreatedTime(
+            reason, block.createdTime());
+        HeightValidator::validateHeight(reason, block.height());
+        TransactionsValidator::validateTransactions(reason, block.transactions());
+        if (not reason.second.empty()) {
+          answer.addReason(std::move(reason));
+        }
+        return answer;
       }
+
+     private:
+      FieldValidator field_validator_;
     };
 
   }  // namespace validation

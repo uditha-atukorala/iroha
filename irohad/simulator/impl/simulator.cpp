@@ -84,8 +84,11 @@ namespace iroha {
       temporaryStorageResult.match(
           [&](expected::Value<std::unique_ptr<ametsuchi::TemporaryWsv>>
                   &temporaryStorage) {
+            std::cout << "proposal size: " << proposal.transactions().size();
             auto validated_proposal =
                 validator_->validate(proposal, *temporaryStorage.value);
+            std::cout << "validated_proposal size: "
+                      << validated_proposal->transactions().size();
             notifier_.get_subscriber().on_next(validated_proposal);
           },
           [&](expected::Error<std::string> &error) {

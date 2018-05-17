@@ -18,7 +18,6 @@
 #ifndef IROHA_CONSENSUS_GATE_HPP
 #define IROHA_CONSENSUS_GATE_HPP
 
-#include <boost/variant.hpp>
 #include <rxcpp/rx.hpp>
 
 namespace shared_model {
@@ -30,16 +29,12 @@ namespace shared_model {
 
 namespace iroha {
   namespace network {
-
-    using ConsensusResultType =
-        boost::variant<std::shared_ptr<shared_model::interface::Block>,
-                       std::shared_ptr<shared_model::interface::EmptyBlock>>;
-
     /**
      * Public api of consensus module
      */
     class ConsensusGate {
      public:
+
       /**
        * Providing data for consensus for voting
        */

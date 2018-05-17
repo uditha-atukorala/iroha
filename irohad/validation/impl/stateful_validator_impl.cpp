@@ -82,7 +82,7 @@ namespace iroha {
       auto validated_proposal = shared_model::proto::ProposalBuilder()
                                     .createdTime(proposal.createdTime())
                                     .height(proposal.height())
-                                    .transactions(valid_proto_txs)
+                                    .transactions(boost::copy_range(valid_proto_txs))
                                     .createdTime(proposal.createdTime())
                                     .build();
 
