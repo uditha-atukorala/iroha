@@ -17,6 +17,7 @@
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 
+add_subdirectory(model)
 add_subdirectory(interactive)
 
 # Gflags config validators

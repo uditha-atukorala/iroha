@@ -15,6 +15,8 @@
 # limitations under the License.
 #
 
+add_subdirectory(model)
+
 addtest(client_test client_test.cpp)
 target_link_libraries(client_test
     client

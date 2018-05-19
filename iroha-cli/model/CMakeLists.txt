@@ -43,6 +43,10 @@ target_link_libraries(model
     rapidjson
     )
 
+target_include_directories(model PUBLIC
+    ${PROJECT_SOURCE_DIR}/iroha-cli
+    )
+
 add_library(model_registrations INTERFACE)
 target_include_directories(model_registrations INTERFACE
     registration
