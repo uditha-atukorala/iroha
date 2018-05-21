@@ -52,6 +52,8 @@ pipeline {
                   [$class: 'CleanCheckout'], [$class: 'PruneStaleBranch'], [$class: 'UserIdentity', 
                   email: 'jenkins@soramitsu.co.jp', name: 'jenkins']], submoduleCfg: [], userRemoteConfigs: 
                   [[credentialsId: 'sorabot-github-user', url: 'https://github.com/hyperledger/iroha.git']]]
+                sh "git checkout ${CHANGE_TARGET}"
+                sh "git reset --hard ORIG_HEAD && git merge --ff-only --squash ${CHANGE_BRANCH} && git add . && git commit --no-edit"
                 sh('echo This commit is mergeable')
                 // sh("git push https://${sorabot}@github.com/hyperledger/iroha.git HEAD:${CHANGE_TARGET}")
               }
