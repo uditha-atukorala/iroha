@@ -12,7 +12,7 @@
 using namespace iroha::ametsuchi;
 using namespace iroha::expected;
 
-class StorageTest : public ::testing::Test {
+class StorageInitTest : public ::testing::Test {
  protected:
   std::string block_store_path =
       (boost::filesystem::temp_directory_path() / "block_store").string();
@@ -39,7 +39,7 @@ class StorageTest : public ::testing::Test {
  * @when Create storage using that options string
  * @then Database is created
  */
-TEST_F(StorageTest, CreateStorageWithDatabase) {
+TEST_F(StorageInitTest, CreateStorageWithDatabase) {
   StorageImpl::create(block_store_path, pgopt_)
       .match([](const Value<std::shared_ptr<StorageImpl>> &) { SUCCEED(); },
              [](const Error<std::string> &error) { FAIL() << error.error; });
@@ -57,7 +57,7 @@ TEST_F(StorageTest, CreateStorageWithDatabase) {
  * @when Create storage using that options string
  * @then Database is not created and error case is executed
  */
-TEST_F(StorageTest, CreateStorageWithInvalidPgOpt) {
+TEST_F(StorageInitTest, CreateStorageWithInvalidPgOpt) {
   std::string pg_opt = "host=localhost port=5432 users=nonexistinguser";
   StorageImpl::create(block_store_path, pg_opt)
       .match(
