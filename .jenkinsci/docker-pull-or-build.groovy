@@ -49,11 +49,12 @@ def dockerPullOrUpdate(imageName, currentDockerfileURL, previousDockerfileURL, r
       // try pulling image from AWS EFS, probably image is already there
       if ( env.NODE_NAME.contains('x86_64') ) {
         def testExitCode = sh(script: "docker load -i ${JENKINS_DOCKER_IMAGE_DIR}/${dockerImageFile}", returnStatus: true)
+        iC = docker.image("${DOCKER_REGISTRY_BASENAME}:${imageName}")
         if (testExitCode != 0) {
           // hyperledger/iroha:develop was not found. Pull it from docker hub
-          iC = docker.image("${DOCKER_REGISTRY_BASENAME}:${imageName}")
           iC.pull()
         }
+
       }
       else {
         def testExitCode = sh(script: "docker pull ${DOCKER_REGISTRY_BASENAME}:${imageName}", returnStatus: true)
