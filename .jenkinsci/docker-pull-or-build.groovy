@@ -46,15 +46,11 @@ def dockerPullOrUpdate(imageName, currentDockerfileURL, previousDockerfileURL, r
       iC = docker.build("${DOCKER_REGISTRY_BASENAME}:${commit}-${BUILD_NUMBER}", "$buildOptions -f /tmp/${env.GIT_COMMIT}/f1 /tmp/${env.GIT_COMMIT}")
     }
     else {
-      // try pulling image from Dockerhub, probably image is already there
+      // try pulling image from AWS EFS, probably image is already there
       if ( env.NODE_NAME.contains('x86_64') ) {
         def testExitCode = sh(script: "docker load -i ${JENKINS_DOCKER_IMAGE_DIR}/${dockerImageFile}", returnStatus: true)
         if (testExitCode != 0) {
-          // file with docker image was not found. Build it
-          iC = docker.build("${DOCKER_REGISTRY_BASENAME}:${commit}-${BUILD_NUMBER}", "$buildOptions --no-cache -f /tmp/${env.GIT_COMMIT}/f1 /tmp/${env.GIT_COMMIT}")  
-        }
-        else {
-          // file with docker image was found --> update from dockerhub (in case it is develop-build)
+          // hyperledger/iroha:develop was not found. Pull it from docker hub
           iC = docker.image("${DOCKER_REGISTRY_BASENAME}:${imageName}")
           iC.pull()
         }

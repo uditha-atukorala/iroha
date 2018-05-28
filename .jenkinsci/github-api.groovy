@@ -1,7 +1,7 @@
 #!/usr/bin/env groovy
 
 def mergePullRequest() {
-  if ( ! ( checkMergeAcceptance() ) ) { return false  }
+	if ( ! ( checkMergeAcceptance() ) ) { return false  }
 	withCredentials([string(credentialsId: 'jenkins-integration-test', variable: 'sorabot')]) {
 		def slurper = new groovy.json.JsonSlurperClassic()
 		def commitTitle = ""
@@ -29,7 +29,7 @@ def checkMergeAcceptance() {
 	def gitCommitterEmail = sh(script: 'git --no-pager show -s --format=\'%ae\'', returnStdout: true).trim()
 	wrap([$class: 'BuildUser']) {
 		jenkinsCommitterEmail = env.BUILD_USER_EMAIL
-  }
+	}
   withCredentials([string(credentialsId: 'jenkins-integration-test', variable: 'sorabot')]) {
   	def slurper = new groovy.json.JsonSlurperClassic()
   	def jsonResponseReview = sh(script: """
@@ -37,24 +37,24 @@ def checkMergeAcceptance() {
 			""", returnStdout: true).trim()
 		jsonResponseReview = slurper.parseText(jsonResponseReview)
 		if (jsonResponseReview.size() > 0) {
-		  jsonResponseReview.each {
-		    if ("${it.state}" == "APPROVED") {
-		      approvalsRequired -= 1
-		    }
-		  }
+			jsonResponseReview.each {
+				if ("${it.state}" == "APPROVED") {
+					approvalsRequired -= 1
+				}
+			}
 		}
 		if (approvalsRequired > 0) {
-		  sh "echo 'Merge failed. Get more PR approvals before merging'"
-		  return false
+			sh "echo 'Merge failed. Get more PR approvals before merging'"
+			return false
 		}
 		else if (gitCommitterEmail != jenkinsCommitterEmail) {
-		  sh "echo 'Merge failed. Email of the commit does not match Jenkins user'"
-		  return false
+			sh "echo 'Merge failed. Email of the commit does not match Jenkins user'"
+			return false
 		}
 		else {
 			return true
 		}
-  }
+	}
 }
 
 def getMergeMethod() {
@@ -79,21 +79,21 @@ def getPullRequestReviewers() {
 		""", returnStdout: true).trim()
 	jsonResponseReviewers = slurper.parseText(jsonResponseReviewers)
 	if (jsonResponseReviewers.size() > 0) {
-	  jsonResponseReviewers.users.each {
-	  	ghUsersList = ghUsersList.concat("@${it.login} ")
-	  }
+		jsonResponseReviewers.users.each {
+			ghUsersList = ghUsersList.concat("@${it.login} ")
+		}
 	}
 	jsonResponseReview = slurper.parseText(jsonResponseReview)
 	if (jsonResponseReview.size() > 0) {
-	  jsonResponseReview.each {
-	  	if ("${it.state}" == "APPROVED") {
-	  		ghUsersList = ghUsersList.concat("@${it.user.login} ")
-	  	}
-	  }
+		jsonResponseReview.each {
+			if ("${it.state}" == "APPROVED") {
+				ghUsersList = ghUsersList.concat("@${it.user.login} ")
+			}
+		}
 	}
 	return ghUsersList
 }
-// comment to github issues with reviewers mentions with build status
+
 def writePullRequestComment() {
 	def ghUsersList = getPullRequestReviewers()
 	withCredentials([string(credentialsId: 'jenkins-integration-test', variable: 'sorabot')]) {
