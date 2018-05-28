@@ -1,10 +1,8 @@
 #!/usr/bin/env groovy
 
 def doReleaseBuild(coverageEnabled=false) {
-  def parallelism = params.PARALLELISM
-  if (parallelism == null) {
-    parallelism = 4
-  }
+  def setter = load ".jenkinsci/set-parallelism.groovy"
+  def parallelism = setter.setParallelism(params.PARALLELISM)
   def scmVars = checkout scm
   env.IROHA_VERSION = "0x${scmVars.GIT_COMMIT}"
   env.IROHA_HOME = "/opt/iroha"
@@ -23,8 +21,8 @@ def doReleaseBuild(coverageEnabled=false) {
       -DPACKAGE_TGZ=ON \
       -DCMAKE_BUILD_TYPE=Release \
       -DIROHA_VERSION=${env.IROHA_VERSION}
-
-    cmake --build build --target package -- -j${params.PARALLELISM}
+    
+    cmake --build build --target package -- -j${parallelism}
     mv ./build/iroha-${env.IROHA_VERSION}-*.tar.gz ./build/iroha.tar.gz
     ccache --show-stats
   """
