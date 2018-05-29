@@ -61,7 +61,6 @@ def doDebugBuild(coverageEnabled=false) {
         env.IROHA_VERSION = "0x${scmVars.GIT_COMMIT}"
         env.IROHA_HOME = "/opt/iroha"
         env.IROHA_BUILD = "${env.IROHA_HOME}/build"
-
         sh """
           ccache --version
           ccache --show-stats
@@ -77,6 +76,7 @@ def doDebugBuild(coverageEnabled=false) {
             -DIROHA_VERSION=${env.IROHA_VERSION} \
             ${cmakeOptions}
         """
+        sh "echo 1 > build/end.lock"
         sh "cmake --build build -- -j${parallelism}"
         sh "ccache --show-stats"
      }
@@ -85,6 +85,11 @@ def doDebugBuild(coverageEnabled=false) {
 def doPreCoverageStep() {
   if ( env.NODE_NAME.contains('x86_64') ) {
     sh "docker load -i ${JENKINS_DOCKER_IMAGE_DIR}/${dockerImageFile}"
+  }
+  waitUntil {
+    if ( sh(script: 'cat build/end.lock', returnStdout: true) == "1" ) {
+      return true
+    }
   }
   def iC = docker.image("${dockerAgentImage}")
   iC.inside(""

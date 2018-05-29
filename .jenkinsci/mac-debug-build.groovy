@@ -46,7 +46,7 @@ def doTestStep(testList) {
   """
   def testExitCode = sh(script: """IROHA_POSTGRES_HOST=localhost IROHA_POSTGRES_PORT=5433 cd build && ctest --output-on-failure -R '${testList}' """, returnStatus: true)
   if (testExitCode != 0) {
-    currentBuild.currentResult = "UNSTABLE"
+    currentBuild.result = "UNSTABLE"
   }
 }
  
