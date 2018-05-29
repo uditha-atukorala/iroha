@@ -8,7 +8,6 @@
 //                      |-> MacOS                      |-> MacOS
 //
 // NOTE: In build stage we differentiate only platforms in pipeline scheme. Build/Release is filtered inside the platform
-// TODO: limit stage of pipeline for execution: 3 hours
 
 properties([parameters([
   choice(choices: 'Debug\nRelease', description: '', name: 'BUILD_TYPE'),

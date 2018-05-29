@@ -101,7 +101,7 @@ def writePullRequestComment() {
 		def jsonResponseComment = sh(script: """
 			curl -H "Authorization: token ${sorabot}" \
 			-H "Accept: application/vnd.github.v3+json" \
-			-X POST --data '{"body":"${ghUsersList} commit ${env.GIT_COMMIT} build status: ${currentBuild.currentResult}"}' \
+			-X POST --data '{"body":"${ghUsersList} commit ${env.GIT_COMMIT} build status: ${currentBuild.currentResult}. build URL: ${BUILD_URL}"}' \
 			-w "%{http_code}" https://api.github.com/repos/hyperledger/iroha/issues/${CHANGE_ID}/comments
 			""", returnStdout: true).trim()		
 		def githubResponce = sh(script:"""set +x; printf '%s\n' "${jsonResponseComment}" | tail -n 1 ; set -x""", returnStdout: true).trim()
