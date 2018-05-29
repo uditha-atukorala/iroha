@@ -87,8 +87,11 @@ def doPreCoverageStep() {
     sh "docker load -i ${JENKINS_DOCKER_IMAGE_DIR}/${dockerImageFile}"
   }
   waitUntil {
-    if ( sh(script: 'cat build/end.lock', returnStdout: true) == "1" ) {
+    if ( LOCK_CONDITION = sh(script: 'cat build/end.lock', returnStatus: true) == 0 ) {
       return true
+    }
+    else {
+      return false
     }
   }
   def iC = docker.image("${dockerAgentImage}")
