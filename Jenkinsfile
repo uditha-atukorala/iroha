@@ -190,51 +190,51 @@ pipeline {
             }
           }
         }
-      }
-    }
-    stage('Pre-Coverage') {
-      when {
-        anyOf {
-          expression { params.Coverage }  // by request
-          allOf {
-            expression { return env.CHANGE_ID }
-            not { expression { return env.GIT_PREVIOUS_COMMIT } }
-          }
-          allOf {
-            expression { return env.CHANGE_ID != null}
-            expression { return env.GIT_PREVIOUS_COMMIT != null }
-            expression { return env.CHANGE_TARGET ==~ /(master|develop|trunk)/ }
-            expression { return params.Merge_PR }
-          }
-          allOf {
-            expression { return params.BUILD_TYPE == 'Debug' }
-            expression { return env.GIT_LOCAL_BRANCH ==~ /master/ }
-          }
-        }
-      }
-      steps {
-        script {
-          def cov_platform = ''
-          if (params.Linux) {
-            cov_platform = 'x86_64_aws_cov'
-          }
-          if (!params.Linux && params.MacOS) {
-            cov_platform = 'mac'
-          }
-          if (!params.Linux && !params.MacOS && params.ARMv8) {
-            cov_platform = 'armv8'
-          }
-          else if (!params.Linux && !params.MacOS && !params.ARMv8) {
-            cov_platform = 'armv7'
-          }
-          node(cov_platform) {
-            if (cov_platform == 'mac') {
-              coverage = load '.jenkinsci/mac-debug-build.groovy'
+        stage('Pre-Coverage') {
+          when {
+            anyOf {
+              expression { params.Coverage }  // by request
+              allOf {
+                expression { return env.CHANGE_ID }
+                not { expression { return env.GIT_PREVIOUS_COMMIT } }
+              }
+              allOf {
+                expression { return env.CHANGE_ID != null}
+                expression { return env.GIT_PREVIOUS_COMMIT != null }
+                expression { return env.CHANGE_TARGET ==~ /(master|develop|trunk)/ }
+                expression { return params.Merge_PR }
+              }
+              allOf {
+                expression { return params.BUILD_TYPE == 'Debug' }
+                expression { return env.GIT_LOCAL_BRANCH ==~ /master/ }
+              }
             }
-            else {
-              coverage = load '.jenkinsci/debug-build.groovy'
+          }
+          steps {
+            script {
+              def cov_platform = ''
+              if (params.Linux) {
+                cov_platform = 'x86_64_aws_cov'
+              }
+              if (!params.Linux && params.MacOS) {
+                cov_platform = 'mac'
+              }
+              if (!params.Linux && !params.MacOS && params.ARMv8) {
+                cov_platform = 'armv8'
+              }
+              else if (!params.Linux && !params.MacOS && !params.ARMv8) {
+                cov_platform = 'armv7'
+              }
+              node(cov_platform) {
+                if (cov_platform == 'mac') {
+                  coverage = load '.jenkinsci/mac-debug-build.groovy'
+                }
+                else {
+                  coverage = load '.jenkinsci/debug-build.groovy'
+                }
+                coverage.doPreCoverageStep()
+              }
             }
-            coverage.doPreCoverageStep()
           }
         }
       }
