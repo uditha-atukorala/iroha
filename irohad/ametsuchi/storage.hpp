@@ -64,6 +64,11 @@ namespace iroha {
               &blocks) = 0;
 
       /**
+       * Initialize storage
+       */
+      virtual void init() = 0;
+
+      /**
        * method called when block is written to the storage
        * @return observable with the Block committed
        */
