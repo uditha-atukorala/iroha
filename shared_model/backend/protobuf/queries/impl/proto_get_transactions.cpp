@@ -1,0 +1,37 @@
+/**
+ * Copyright Soramitsu Co., Ltd. All Rights Reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "backend/protobuf/queries/proto_get_transactions.hpp"
+#include "utils/lazy_initializer.hpp"
+#include <boost/range/numeric.hpp>
+
+namespace shared_model {
+  namespace proto {
+
+    template <typename QueryType>
+    GetTransactions::GetTransactions(QueryType &&query)
+        : CopyableProto(std::forward<QueryType>(query)),
+          get_transactions_{proto_->payload().get_transactions()},
+          transaction_hashes_{[this] {
+            return boost::accumulate(get_transactions_.tx_hashes(),
+                                     TransactionHashesType{},
+                                     [](auto &&acc, const auto &hash) {
+                                       acc.emplace_back(hash);
+                                       return std::forward<decltype(acc)>(acc);
+                                     });
+          }} {}
+
+    GetTransactions::GetTransactions(const GetTransactions &o)
+        : GetTransactions(o.proto_) {}
+
+    GetTransactions::GetTransactions(GetTransactions &&o) noexcept
+        : GetTransactions(std::move(o.proto_)) {}
+
+    const GetTransactions::TransactionHashesType &GetTransactions::transactionHashes() const {
+      return *transaction_hashes_;
+    }
+
+  }  // namespace proto
+}  // namespace shared_model
