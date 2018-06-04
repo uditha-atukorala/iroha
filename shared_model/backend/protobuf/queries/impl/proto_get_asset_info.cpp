@@ -14,6 +14,10 @@ namespace shared_model {
         : CopyableProto(std::forward<QueryType>(query)),
           asset_info_{proto_->payload().get_asset_info()} {}
 
+    template GetAssetInfo::GetAssetInfo(GetAssetInfo::TransportType &);
+    template GetAssetInfo::GetAssetInfo(const GetAssetInfo::TransportType &);
+    template GetAssetInfo::GetAssetInfo(GetAssetInfo::TransportType &&);
+
     GetAssetInfo::GetAssetInfo(const GetAssetInfo &o)
         : GetAssetInfo(o.proto_) {}
 

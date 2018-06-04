@@ -14,6 +14,11 @@ namespace shared_model {
         : CopyableProto(std::forward<QueryType>(query)),
           account_signatories_{proto_->payload().get_account_signatories()} {}
 
+    template GetSignatories::GetSignatories(GetSignatories::TransportType &);
+    template GetSignatories::GetSignatories(
+        const GetSignatories::TransportType &);
+    template GetSignatories::GetSignatories(GetSignatories::TransportType &&);
+
     GetSignatories::GetSignatories(const GetSignatories &o)
         : GetSignatories(o.proto_) {}
 

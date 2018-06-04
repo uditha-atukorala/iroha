@@ -14,6 +14,13 @@ namespace shared_model {
         : CopyableProto(std::forward<QueryType>(query)),
           account_detail_{proto_->payload().get_account_detail()} {}
 
+    template GetAccountDetail::GetAccountDetail(
+        GetAccountDetail::TransportType &);
+    template GetAccountDetail::GetAccountDetail(
+        const GetAccountDetail::TransportType &);
+    template GetAccountDetail::GetAccountDetail(
+        GetAccountDetail::TransportType &&);
+
     GetAccountDetail::GetAccountDetail(const GetAccountDetail &o)
         : GetAccountDetail(o.proto_) {}
 

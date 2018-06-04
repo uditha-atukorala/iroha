@@ -41,7 +41,8 @@ add_library(shared_model_interfaces
     queries/impl/get_role_permissions.cpp
     queries/impl/get_roles.cpp
     queries/impl/get_signatories.cpp
-    queries/impl/get_transactions.cpp)
+    queries/impl/get_transactions.cpp
+    )
 
 target_link_libraries(shared_model_interfaces
     shared_model_cryptography

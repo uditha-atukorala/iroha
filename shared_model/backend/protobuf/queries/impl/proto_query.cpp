@@ -36,6 +36,10 @@ namespace shared_model {
             return set;
           }} {}
 
+    template Query::Query(Query::TransportType &);
+    template Query::Query(const Query::TransportType &);
+    template Query::Query(Query::TransportType &&);
+
     Query::Query(const Query &o) : Query(o.proto_) {}
 
     Query::Query(Query &&o) noexcept : Query(std::move(o.proto_)) {}

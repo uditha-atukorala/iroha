@@ -15,6 +15,13 @@ namespace shared_model {
           account_asset_transactions_{
               proto_->payload().get_account_asset_transactions()} {}
 
+    template GetAccountAssetTransactions::GetAccountAssetTransactions(
+        GetAccountAssetTransactions::TransportType &);
+    template GetAccountAssetTransactions::GetAccountAssetTransactions(
+        const GetAccountAssetTransactions::TransportType &);
+    template GetAccountAssetTransactions::GetAccountAssetTransactions(
+        GetAccountAssetTransactions::TransportType &&);
+
     GetAccountAssetTransactions::GetAccountAssetTransactions(
         const GetAccountAssetTransactions &o)
         : GetAccountAssetTransactions(o.proto_) {}

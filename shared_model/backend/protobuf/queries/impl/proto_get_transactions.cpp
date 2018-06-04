@@ -4,8 +4,8 @@
  */
 
 #include "backend/protobuf/queries/proto_get_transactions.hpp"
-#include "utils/lazy_initializer.hpp"
 #include <boost/range/numeric.hpp>
+#include "utils/lazy_initializer.hpp"
 
 namespace shared_model {
   namespace proto {
@@ -23,13 +23,21 @@ namespace shared_model {
                                      });
           }} {}
 
+    template GetTransactions::GetTransactions(
+        GetTransactions::TransportType &);
+    template GetTransactions::GetTransactions(
+        const GetTransactions::TransportType &);
+    template GetTransactions::GetTransactions(
+        GetTransactions::TransportType &&);
+
     GetTransactions::GetTransactions(const GetTransactions &o)
         : GetTransactions(o.proto_) {}
 
     GetTransactions::GetTransactions(GetTransactions &&o) noexcept
         : GetTransactions(std::move(o.proto_)) {}
 
-    const GetTransactions::TransactionHashesType &GetTransactions::transactionHashes() const {
+    const GetTransactions::TransactionHashesType &
+    GetTransactions::transactionHashes() const {
       return *transaction_hashes_;
     }
 

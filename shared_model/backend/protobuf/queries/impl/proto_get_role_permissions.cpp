@@ -14,6 +14,13 @@ namespace shared_model {
         : CopyableProto(std::forward<QueryType>(query)),
           role_permissions_{proto_->payload().get_role_permissions()} {}
 
+    template GetRolePermissions::GetRolePermissions(
+        GetRolePermissions::TransportType &);
+    template GetRolePermissions::GetRolePermissions(
+        const GetRolePermissions::TransportType &);
+    template GetRolePermissions::GetRolePermissions(
+        GetRolePermissions::TransportType &&);
+
     GetRolePermissions::GetRolePermissions(const GetRolePermissions &o)
         : GetRolePermissions(o.proto_) {}
 

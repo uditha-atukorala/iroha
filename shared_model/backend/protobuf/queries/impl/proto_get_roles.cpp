@@ -7,15 +7,19 @@
 #include "utils/lazy_initializer.hpp"
 
 namespace shared_model {
-    namespace proto {
+  namespace proto {
 
-        template <typename QueryType>
-        GetRoles::GetRoles(QueryType &&query)
+    template <typename QueryType>
+    GetRoles::GetRoles(QueryType &&query)
         : CopyableProto(std::forward<QueryType>(query)) {}
 
-        GetRoles::GetRoles(const GetRoles &o) : GetRoles(o.proto_) {}
+    template GetRoles::GetRoles(GetRoles::TransportType &);
+    template GetRoles::GetRoles(const GetRoles::TransportType &);
+    template GetRoles::GetRoles(GetRoles::TransportType &&);
 
-        GetRoles::GetRoles(GetRoles &&o) noexcept : GetRoles(std::move(o.proto_)) {}
+    GetRoles::GetRoles(const GetRoles &o) : GetRoles(o.proto_) {}
 
-    }
-}
+    GetRoles::GetRoles(GetRoles &&o) noexcept : GetRoles(std::move(o.proto_)) {}
+
+  }  // namespace proto
+}  // namespace shared_model
