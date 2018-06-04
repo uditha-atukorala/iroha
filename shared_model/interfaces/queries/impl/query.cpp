@@ -4,7 +4,6 @@
  */
 
 #include "interfaces/queries/query.hpp"
-#include "utils/string_builder.hpp"
 #include "utils/visitor_apply_for_all.hpp"
 
 namespace shared_model {

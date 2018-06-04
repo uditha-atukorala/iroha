@@ -17,7 +17,7 @@ add_library(shared_model_proto_backend
     commands/impl/proto_set_quorum.cpp
     commands/impl/proto_subtract_asset_quantity.cpp
     commands/impl/proto_transfer_asset.cpp
-    )
+        queries/impl/proto_query.cpp)
 
 target_link_libraries(shared_model_proto_backend
     schema
