@@ -1,7 +1,49 @@
 #ifndef IROHA_BASIC_BUILDER_HPP
 #define IROHA_BASIC_BUILDER_HPP
 
+#include <tuple>
+
+template <typename BackendBuilder, typename BuildPolicy, int S>
+struct BuilderProperties {
+  BackendBuilder b;
+  BuildPolicy bp;
+  constexpr static int s{S};
+};
+
+template <template <typename, typename, int> class Builder,
+          typename BackendBuilder,
+          typename BuildPolicy,
+          int S>
+constexpr BuilderProperties<BackendBuilder, BuildPolicy, S>
+extractBuilderProperties(Builder<BackendBuilder, BuildPolicy, S> &&);
+
+template <typename BP>
+constexpr int getS(const BP &bp) {
+  return bp.s;
+}
+
+template <typename Builder>
+using BackendBuilder =
+    decltype(extractBuilderProperties(std::declval<Builder>()).b);
+
+template <typename Builder>
+using BuildPolicy =
+    decltype(extractBuilderProperties(std::declval<Builder>()).bp);
+
+template <typename Builder>
+constexpr int S =
+    decltype(extractBuilderProperties(std::declval<Builder>()))::s;
+
 enum class SetterPolicy { Copy, Move };
+
+// TODO: use ExtractBuilderPolicy
+template <template <typename, typename, int> class Builder,
+          typename BackendBuilder,
+          typename BuildPolicy,
+          int S,
+          int s>
+Builder<BackendBuilder, BuildPolicy, s> nextBuilder(
+    Builder<BackendBuilder, BuildPolicy, S> &&);
 
 /**
  * returns new type with all the same parameters except S,
@@ -9,6 +51,11 @@ enum class SetterPolicy { Copy, Move };
  */
 template <typename Builder, int S>
 using NewBuilderType = typename std::decay_t<Builder>::template NextBuilder<S>;
+
+// template <typename Builder, int s>
+// using NewBuilderType = decltype(
+//    nextBuilder<BackendBuilder<Builder>, BuildPolicy<Builder>, S<Builder>,
+//    s>(std::declval<std::decay_t<Builder>>()));
 
 /**
  * returns new type with all the same parameters except S,
@@ -106,18 +153,20 @@ auto transform(Builder &&b, Transformation &&t) {
 /**
  * Base class for all builders which create interface objects.
  */
-template <typename BuilderImpl,
-          typename BackendBuilder,
-          typename BuildPolicy,
-          int S = 0>
+template <typename BuilderImpl>
 class BasicBuilder {
+ private:
+  using BB = BackendBuilder<BuilderImpl>;
+  using BP = BuildPolicy<BuilderImpl>;
+
  public:
+  using Impl = BuilderImpl;
   /**
    * Construct object from internal state of the builder
    * @return Return type is the return type of the BuildPolicy
    */
   auto build() {
-    static_assert(S == (1 << BuilderImpl::TOTAL) - 1,
+    static_assert(kS == (1 << BuilderImpl::TOTAL) - 1,
                   "Required fields are not set");
     return build_func_(backend_builder_.build());
   }
@@ -132,19 +181,18 @@ class BasicBuilder {
    * Setter which uses concrete implementation from BackendBuilder to set
    * state of the object.
    */
-  auto fromImplementation(const typename BackendBuilder::ImplType &impl) {
+  auto fromImplementation(const typename BB::ImplType &impl) {
     auto copy = makeNewBuilder<
         NewBuilderType<BuilderImpl, (1 << BuilderImpl::TOTAL) - 1>>(*this);
     copy.backend_builder_ = copy.backend_builder_.fromImplementation(impl);
     return copy;
   }
 
-  BackendBuilder backend_builder_;
-  BuildPolicy build_func_;
+  BB backend_builder_;
+  BP build_func_;
 
-  static constexpr enum SetterPolicy kSetterPolicy =
-      BackendBuilder::kSetterPolicy;
-  static constexpr int kS = S;
+  static constexpr enum SetterPolicy kSetterPolicy = BB::kSetterPolicy;
+  static constexpr int kS = S<BuilderImpl>;
 };
 
 #endif  // IROHA_BASIC_BUILDER_HPP
