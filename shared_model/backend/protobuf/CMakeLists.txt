@@ -28,6 +28,8 @@ add_library(shared_model_proto_backend
     queries/impl/proto_get_roles.cpp
     queries/impl/proto_get_signatories.cpp
     queries/impl/proto_get_transactions.cpp
+    queries/impl/proto_blocks_query.cpp
+    queries/impl/proto_query_payload_meta.cpp
     )
 
 target_link_libraries(shared_model_proto_backend

@@ -49,11 +49,11 @@ namespace shared_model {
     }
 
     const interface::types::AccountIdType &Query::creatorAccountId() const {
-      return proto_->payload().creator_account_id();
+      return proto_->payload().meta().creator_account_id();
     }
 
     interface::types::CounterType Query::queryCounter() const {
-      return proto_->payload().query_counter();
+      return proto_->payload().meta().query_counter();
     }
 
     const interface::types::BlobType &Query::blob() const {
@@ -81,7 +81,7 @@ namespace shared_model {
     }
 
     interface::types::TimestampType Query::createdTime() const {
-      return proto_->payload().created_time();
+      return proto_->payload().meta().created_time();
     }
 
   }  // namespace proto

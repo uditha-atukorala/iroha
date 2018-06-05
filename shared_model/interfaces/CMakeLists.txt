@@ -42,6 +42,8 @@ add_library(shared_model_interfaces
     queries/impl/get_roles.cpp
     queries/impl/get_signatories.cpp
     queries/impl/get_transactions.cpp
+    queries/impl/blocks_query.cpp
+    queries/impl/query_payload_meta.cpp
     )
 
 target_link_libraries(shared_model_interfaces
