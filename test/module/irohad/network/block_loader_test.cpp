@@ -55,7 +55,7 @@ class BlockLoaderTest : public testing::Test {
         peer_query,
         storage,
         std::make_shared<shared_model::validation::DefaultBlockValidator>());
-    service = std::make_shared<BlockLoaderService>(storage);
+    service = std::make_shared<BlockLoaderService>(storage, consensus_cache);
 
     grpc::ServerBuilder builder;
     int port = 0;
@@ -100,6 +100,7 @@ class BlockLoaderTest : public testing::Test {
   std::shared_ptr<BlockLoaderImpl> loader;
   std::shared_ptr<BlockLoaderService> service;
   std::unique_ptr<grpc::Server> server;
+  iroha::network::ConsensusCacheType consensus_cache;
 };
 
 /**

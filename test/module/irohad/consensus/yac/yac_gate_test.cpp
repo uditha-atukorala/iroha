@@ -88,7 +88,7 @@ class YacGateTest : public ::testing::Test {
                                          hash_provider,
                                          block_creator,
                                          block_loader,
-                                         delay);
+                                         delay, consensus_cache);
   }
 
   YacHash expected_hash;
@@ -103,6 +103,7 @@ class YacGateTest : public ::testing::Test {
   shared_ptr<MockBlockCreator> block_creator;
   shared_ptr<MockBlockLoader> block_loader;
   uint64_t delay = 0;
+  iroha::network::ConsensusCacheType consensus_cache;
 
   shared_ptr<YacGateImpl> gate;
 

@@ -56,12 +56,9 @@ grpc::Status BlockLoaderService::retrieveBlock(
   }
 
   iroha::protocol::Block result;
-  if (consensus_cache_.read_available()) {
-    network::ConsensusCacheType::value_type block_cache;
-    while (!consensus_cache_.pop(block_cache))
-      ;
+  if (auto block_cache = consensus_cache_.get()) {
     result = iroha::visit_in_place(
-        block_cache,
+        *block_cache,
         [](const std::shared_ptr<shared_model::interface::Block> block) {
           return std::static_pointer_cast<shared_model::proto::Block>(block)
               ->getTransport();

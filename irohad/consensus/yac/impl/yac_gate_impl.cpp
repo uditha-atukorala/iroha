@@ -66,8 +66,8 @@ namespace iroha {
           return;
         }
         current_block_ = std::make_pair(hash, block);
-        while (!consensus_cache_.push(block))
-          ;
+        consensus_cache_.insert(
+            std::make_shared<shared_model::interface::BlockVariant>(block));
         hash_gate_->vote(hash, *order);
       }
 
@@ -140,8 +140,8 @@ namespace iroha {
           current_block_.second.addSignature(sig->signedData(),
                                              sig->publicKey());
         }
-        while (!consensus_cache_.push(block))
-          ;
+        consensus_cache_.insert(
+            std::make_shared<decltype(current_block_.second)>(current_block_.second));
       }
     }  // namespace yac
   }    // namespace consensus
