@@ -4,8 +4,7 @@
  */
 
 #include "interfaces/queries/blocks_query.hpp"
-#include "interfaces/base/model_primitive.hpp"
-#include <boost/variant.hpp>
+#include "utils/string_builder.hpp"
 
 namespace shared_model {
   namespace interface {
@@ -21,9 +20,9 @@ namespace shared_model {
 
     bool BlocksQuery::operator==(const ModelType &rhs) const {
       return creatorAccountId() == rhs.creatorAccountId()
-          && queryCounter() == rhs.queryCounter()
-          && createdTime() == rhs.createdTime()
-          && signatures() == rhs.signatures();
+          and queryCounter() == rhs.queryCounter()
+          and createdTime() == rhs.createdTime()
+          and signatures() == rhs.signatures();
     }
 
   }  // namespace interface

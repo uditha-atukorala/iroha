@@ -10,8 +10,8 @@ namespace shared_model {
 
     bool QueryPayloadMeta::operator==(const ModelType &rhs) const {
       return creatorAccountId() == rhs.creatorAccountId()
-          && queryCounter() == rhs.queryCounter()
-          && createdTime() == rhs.createdTime();
+          and queryCounter() == rhs.queryCounter()
+          and createdTime() == rhs.createdTime();
     }
 
   }  // namespace interface

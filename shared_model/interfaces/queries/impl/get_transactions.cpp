@@ -4,7 +4,7 @@
  */
 
 #include "interfaces/queries/get_transactions.hpp"
-#include "interfaces/transaction.hpp"
+#include "utils/string_builder.hpp"
 
 namespace shared_model {
   namespace interface {
