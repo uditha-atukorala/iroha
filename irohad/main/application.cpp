@@ -192,7 +192,7 @@ void Irohad::initSimulator() {
  */
 void Irohad::initBlockLoader() {
   block_loader =
-      loader_init.initBlockLoader(initPeerQuery(), storage->getBlockQuery());
+      loader_init.initBlockLoader(initPeerQuery(), storage->getBlockQuery(), consensus_cache);
 
   log_->info("[Init] => block loader");
 }

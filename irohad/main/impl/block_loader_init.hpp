@@ -19,6 +19,7 @@
 #define IROHA_BLOCK_LOADER_INIT_HPP
 
 #include "ametsuchi/block_query.hpp"
+#include "network/consensus_cache.hpp"
 #include "network/impl/block_loader_impl.hpp"
 #include "network/impl/block_loader_service.hpp"
 
@@ -34,15 +35,15 @@ namespace iroha {
        * @param storage - used to retrieve blocks
        * @return initialized service
        */
-      auto createService(std::shared_ptr<ametsuchi::BlockQuery> storage);
+      auto createService(std::shared_ptr<ametsuchi::BlockQuery> storage,
+                         network::ConsensusCacheType &consensusCacheType);
 
       /**
        * Create block loader for loading blocks from given peer by top block
        * @return initialized loader
        */
-      auto createLoader(
-          std::shared_ptr<ametsuchi::PeerQuery> peer_query,
-          std::shared_ptr<ametsuchi::BlockQuery> storage);
+      auto createLoader(std::shared_ptr<ametsuchi::PeerQuery> peer_query,
+                        std::shared_ptr<ametsuchi::BlockQuery> storage);
 
      public:
       /**
@@ -51,7 +52,8 @@ namespace iroha {
        */
       std::shared_ptr<BlockLoader> initBlockLoader(
           std::shared_ptr<ametsuchi::PeerQuery> peer_query,
-          std::shared_ptr<ametsuchi::BlockQuery> storage);
+          std::shared_ptr<ametsuchi::BlockQuery> storage,
+          network::ConsensusCacheType &consensus_cache);
 
       std::shared_ptr<BlockLoaderImpl> loader;
       std::shared_ptr<BlockLoaderService> service;

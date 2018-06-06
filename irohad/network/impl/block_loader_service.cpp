@@ -17,13 +17,16 @@
 
 #include "network/impl/block_loader_service.hpp"
 #include "backend/protobuf/block.hpp"
+#include "backend/protobuf/empty_block.hpp"
 
 using namespace iroha;
 using namespace iroha::ametsuchi;
 using namespace iroha::network;
 
-BlockLoaderService::BlockLoaderService(std::shared_ptr<BlockQuery> storage)
-    : storage_(std::move(storage)) {
+BlockLoaderService::BlockLoaderService(
+    std::shared_ptr<BlockQuery> storage,
+    network::ConsensusCacheType &consensus_cache)
+    : storage_(std::move(storage)), consensus_cache_(consensus_cache) {
   log_ = logger::log("BlockLoaderService");
 }
 
@@ -52,19 +55,40 @@ grpc::Status BlockLoaderService::retrieveBlock(
                         "Bad hash provided");
   }
 
-  boost::optional<protocol::Block> result;
-  storage_->getBlocksFrom(1)
-      .filter([&hash](auto block) { return block->hash() == hash; })
-      .map([](auto block) {
-        return std::dynamic_pointer_cast<shared_model::proto::Block>(block)
-            ->getTransport();
-      })
-      .as_blocking()
-      .subscribe([&result](auto block) { result = block; });
-  if (not result) {
-    log_->info("Cannot find block with requested hash");
-    return grpc::Status(grpc::StatusCode::NOT_FOUND, "Block not found");
+  iroha::protocol::Block result;
+  if (consensus_cache_.read_available()) {
+    network::ConsensusCacheType::value_type block_cache;
+    while (!consensus_cache_.pop(block_cache))
+      ;
+    result = iroha::visit_in_place(
+        block_cache,
+        [](const std::shared_ptr<shared_model::interface::Block> block) {
+          return std::static_pointer_cast<shared_model::proto::Block>(block)
+              ->getTransport();
+        },
+        [](const std::shared_ptr<shared_model::interface::EmptyBlock>
+               empty_block) {
+          return std::static_pointer_cast<shared_model::proto::EmptyBlock>(
+                     empty_block)
+              ->getTransport();
+        });
+  } else {
+    boost::optional<protocol::Block> optional_result;
+    storage_->getBlocksFrom(1)
+        .filter([&hash](auto block) { return block->hash() == hash; })
+        .map([](auto block) {
+          return std::dynamic_pointer_cast<shared_model::proto::Block>(block)
+              ->getTransport();
+        })
+        .as_blocking()
+        .subscribe([&optional_result](auto block) { optional_result = block; });
+    if (not optional_result) {
+      log_->info("Cannot find block with requested hash");
+      return grpc::Status(grpc::StatusCode::NOT_FOUND, "Block not found");
+    }
+    result = optional_result.value();
   }
-  response->CopyFrom(result.value());
+
+  response->CopyFrom(result);
   return grpc::Status::OK;
 }
