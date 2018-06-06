@@ -30,6 +30,7 @@
 #include "main/server_runner.hpp"
 #include "multi_sig_transactions/mst_processor.hpp"
 #include "network/block_loader.hpp"
+#include "network/consensus_cache.hpp"
 #include "network/consensus_gate.hpp"
 #include "network/impl/peer_communication_service_impl.hpp"
 #include "network/ordering_gate.hpp"
@@ -172,6 +173,9 @@ class Irohad {
 
   // simulator
   std::shared_ptr<iroha::simulator::Simulator> simulator;
+
+  // consensus cache
+  iroha::network::ConsensusCacheType consensus_cache;
 
   // block loader
   std::shared_ptr<iroha::network::BlockLoader> block_loader;

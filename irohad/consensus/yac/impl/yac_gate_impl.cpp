@@ -40,13 +40,15 @@ namespace iroha {
           std::shared_ptr<YacHashProvider> hash_provider,
           std::shared_ptr<simulator::BlockCreator> block_creator,
           std::shared_ptr<network::BlockLoader> block_loader,
-          uint64_t delay)
+          uint64_t delay,
+          network::ConsensusCacheType &consensus_cache)
           : hash_gate_(std::move(hash_gate)),
             orderer_(std::move(orderer)),
             hash_provider_(std::move(hash_provider)),
             block_creator_(std::move(block_creator)),
             block_loader_(std::move(block_loader)),
-            delay_(delay) {
+            delay_(delay),
+            consensus_cache_(consensus_cache) {
         log_ = logger::log("YacGate");
         block_creator_->on_block().subscribe(
             [this](const auto &block) { this->vote(block); });
@@ -64,6 +66,8 @@ namespace iroha {
           return;
         }
         current_block_ = std::make_pair(hash, block);
+        while (!consensus_cache_.push(block))
+          ;
         hash_gate_->vote(hash, *order);
       }
 
@@ -136,6 +140,8 @@ namespace iroha {
           current_block_.second.addSignature(sig->signedData(),
                                              sig->publicKey());
         }
+        while (!consensus_cache_.push(block))
+          ;
       }
     }  // namespace yac
   }    // namespace consensus

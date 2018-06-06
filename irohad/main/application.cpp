@@ -206,7 +206,8 @@ void Irohad::initConsensusGate() {
                                               block_loader,
                                               keypair,
                                               vote_delay_,
-                                              load_delay_);
+                                              load_delay_,
+                                              consensus_cache);
 
   log_->info("[Init] => consensus gate");
 }

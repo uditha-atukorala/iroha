@@ -32,6 +32,7 @@
 #include "consensus/yac/yac_peer_orderer.hpp"
 #include "cryptography/keypair.hpp"
 #include "network/block_loader.hpp"
+#include "network/consensus_cache.hpp"
 #include "simulator/block_creator.hpp"
 
 namespace iroha {
@@ -64,7 +65,8 @@ namespace iroha {
             std::shared_ptr<network::BlockLoader> block_loader,
             const shared_model::crypto::Keypair &keypair,
             std::chrono::milliseconds vote_delay_milliseconds,
-            std::chrono::milliseconds load_delay_milliseconds);
+            std::chrono::milliseconds load_delay_milliseconds,
+            network::ConsensusCacheType& consensus_cache);
 
         std::shared_ptr<NetworkImpl> consensus_network;
       };

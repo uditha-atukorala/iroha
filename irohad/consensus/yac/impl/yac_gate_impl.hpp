@@ -24,6 +24,7 @@
 #include "consensus/yac/yac_gate.hpp"
 #include "consensus/yac/yac_hash_provider.hpp"
 #include "logger/logger.hpp"
+#include "network/consensus_cache.hpp"
 
 namespace iroha {
 
@@ -48,7 +49,8 @@ namespace iroha {
                     std::shared_ptr<YacHashProvider> hash_provider,
                     std::shared_ptr<simulator::BlockCreator> block_creator,
                     std::shared_ptr<network::BlockLoader> block_loader,
-                    uint64_t delay);
+                    uint64_t delay,
+                    network::ConsensusCacheType &consensus_cache);
         void vote(const shared_model::interface::BlockVariant &) override;
         /**
          * method called when commit recived
@@ -77,6 +79,8 @@ namespace iroha {
 
         std::pair<YacHash, shared_model::interface::BlockVariant>
             current_block_;
+
+        network::ConsensusCacheType &consensus_cache_;
       };
 
     }  // namespace yac
