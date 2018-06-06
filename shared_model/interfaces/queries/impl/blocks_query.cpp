@@ -27,3 +27,4 @@ namespace shared_model {
 
   }  // namespace interface
 }  // namespace shared_model
+

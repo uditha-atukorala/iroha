@@ -5,7 +5,6 @@
 
 #include "backend/protobuf/queries/proto_blocks_query.hpp"
 #include "backend/protobuf/util.hpp"
-#include "utils/lazy_initializer.hpp"
 
 namespace shared_model {
   namespace proto {
