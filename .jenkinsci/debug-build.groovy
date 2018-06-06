@@ -84,9 +84,9 @@ def doDebugBuild(coverageEnabled=false) {
 
 def doPreCoverageStep() {
   waitUntil {
-    def checkExistance = sh(script: '[ -e build/end.lock ]', returnStatus: true)
-    if ( checkExistance == 0 ) { return true }
-    else { return false }
+    sh(script: '[ -e build/end.lock ]', returnStatus: true)
+    // if ( checkExistance == 0 ) { return true }
+    // else { return false }
   }
   if ( env.NODE_NAME.contains('x86_64') ) {
     sh "docker load -i ${JENKINS_DOCKER_IMAGE_DIR}/${dockerImageFile}"
