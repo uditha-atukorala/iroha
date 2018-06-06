@@ -209,16 +209,18 @@ TEST_F(ToriiServiceTest, StatusWhenBlocking) {
 
   // create transactions and send them to Torii
   std::string account_id = "some@account";
+  auto now = iroha::time::now();
   for (size_t i = 0; i < TimesToriiBlocking; ++i) {
     auto shm_tx = shared_model::proto::TransactionBuilder()
                       .creatorAccountId(account_id)
-                      .createdTime(iroha::time::now())
+                      .createdTime(now + i)
                       .setAccountQuorum(account_id, 2)
                       .quorum(1)
                       .build()
                       .signAndAddSignature(
                           shared_model::crypto::DefaultCryptoAlgorithmType::
-                              generateKeypair());
+                              generateKeypair())
+                      .finish();
     const auto &new_tx = shm_tx.getTransport();
 
     auto stat = client1.Torii(new_tx);
@@ -357,7 +359,8 @@ TEST_F(ToriiServiceTest, StreamingFullPipelineTest) {
                       .createdTime(iroha::time::now())
                       .quorum(1)
                       .build()
-                      .signAndAddSignature(keypair);
+                      .signAndAddSignature(keypair)
+                      .finish();
 
   std::string txhash = crypto::toBinaryString(iroha_tx.hash());
 
@@ -389,7 +392,8 @@ TEST_F(ToriiServiceTest, StreamingFullPipelineTest) {
                          .transactions(txs)
                          .prevHash(crypto::Hash(std::string(32, '0')))
                          .build()
-                         .signAndAddSignature(keypair));
+                         .signAndAddSignature(keypair)
+                         .finish());
 
   // create commit from block notifier's observable
   rxcpp::subjects::subject<std::shared_ptr<shared_model::interface::Block>>
@@ -403,7 +407,8 @@ TEST_F(ToriiServiceTest, StreamingFullPipelineTest) {
   block_notifier_.get_subscriber().on_completed();
   t.join();
 
-  ASSERT_GE(torii_response.size(), 2);
+  // we can be sure only about final status
+  // it can be only one or to follow by some non-final
   ASSERT_EQ(torii_response.back().tx_status(),
             iroha::protocol::TxStatus::COMMITTED);
 }

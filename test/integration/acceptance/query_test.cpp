@@ -57,10 +57,10 @@ TEST_F(QueryAcceptanceTest, ParallelBlockQuery) {
   auto check = [&dummy_tx](auto &status) {
     ASSERT_NO_THROW({
       const auto &resp = boost::apply_visitor(
-          interface::SpecifiedVisitor<interface::TransactionsResponse>(),
+          framework::SpecifiedVisitor<interface::TransactionsResponse>(),
           status.get());
       ASSERT_EQ(resp.transactions().size(), 1);
-      ASSERT_EQ(*resp.transactions()[0].operator->(), dummy_tx);
+      ASSERT_EQ(resp.transactions().front(), dummy_tx);
     });
   };
 

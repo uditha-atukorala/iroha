@@ -900,7 +900,8 @@ TEST_F(AmetsuchiTest, TestRestoreWSV) {
           .build()
           .signAndAddSignature(
               shared_model::crypto::DefaultCryptoAlgorithmType::
-                  generateKeypair());
+                  generateKeypair())
+          .finish();
 
   auto genesis_block =
       TestBlockBuilder()
