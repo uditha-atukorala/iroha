@@ -5,7 +5,6 @@
 
 #include "backend/protobuf/queries/proto_get_transactions.hpp"
 #include <boost/range/numeric.hpp>
-#include "utils/lazy_initializer.hpp"
 
 namespace shared_model {
   namespace proto {

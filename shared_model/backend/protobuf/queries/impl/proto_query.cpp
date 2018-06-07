@@ -5,7 +5,6 @@
 
 #include "backend/protobuf/queries/proto_query.hpp"
 #include "backend/protobuf/util.hpp"
-#include "utils/variant_deserializer.hpp"
 
 namespace shared_model {
   namespace proto {

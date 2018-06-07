@@ -4,7 +4,6 @@
  */
 
 #include "backend/protobuf/queries/proto_get_account_asset_transactions.hpp"
-#include "utils/lazy_initializer.hpp"
 
 namespace shared_model {
   namespace proto {
