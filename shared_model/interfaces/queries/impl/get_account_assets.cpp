@@ -16,9 +16,9 @@ namespace shared_model {
           .finalize();
     }
 
-    // TODO 06/06/2018 assetId() == rhs.accountId() should be assetId() == rhs.assetId() IR-1396
+    // TODO 07/06/2018 Akvinikym: types of rhs.accountId() and rhs.assetId() should be different IR-1397
     bool GetAccountAssets::operator==(const ModelType &rhs) const {
-      return accountId() == rhs.accountId() and assetId() == rhs.accountId();
+      return accountId() == rhs.accountId() and assetId() == rhs.assetId();
     }
 
   }  // namespace interface
