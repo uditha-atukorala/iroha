@@ -46,12 +46,15 @@ namespace iroha {
       transaction_->exec("BEGIN;");
     }
 
+    bool MutableStorageImpl::check(
+        const shared_model::interface::EmptyBlock &empty_block,
+        const PredicateType<shared_model::interface::EmptyBlock> &predicate) {
+      return predicate(empty_block, *wsv_, top_hash_);
+    }
+
     bool MutableStorageImpl::apply(
         const shared_model::interface::Block &block,
-        std::function<bool(const shared_model::interface::Block &,
-                           WsvQuery &,
-                           const shared_model::interface::types::HashType &)>
-            function) {
+        const PredicateType<shared_model::interface::Block> &function) {
       auto execute_transaction = [this](auto &transaction) {
         command_executor_->setCreatorAccountId(transaction.creatorAccountId());
         auto execute_command = [this](auto &command) {

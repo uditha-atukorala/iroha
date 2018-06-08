@@ -24,7 +24,8 @@
 namespace shared_model {
   namespace interface {
     class Block;
-  }
+    class EmptyBlock;
+  }  // namespace interface
 }  // namespace shared_model
 
 namespace iroha {
@@ -39,25 +40,41 @@ namespace iroha {
     class MutableStorage {
      public:
       /**
+       * Predicate to check if BlockType is valid
+       * Predicate parameters:
+       *  - BlockType block type to be checked
+       *  - WsvQuery - world state view query interface for mutable storage
+       *  - hash256_t - hash of top block in blockchain
+       */
+      template <typename BlockType>
+      using PredicateType =
+          std::function<bool(const BlockType &,
+                             WsvQuery &,
+                             const shared_model::interface::types::HashType &)>;
+
+      /**
+       * Checks if empty block is valid according to provided predicate
+       * @param empty_block empty block to be checked
+       * @param predicate predicate checking validity of the empty block
+       * @return true if block is valid and false otherwise
+       */
+      bool check(
+          const shared_model::interface::EmptyBlock &empty_block,
+          const PredicateType<shared_model::interface::EmptyBlock> &predicate);
+
+      /**
        * Applies a block to current mutable state
        * using logic specified in function
        * @param block Block to be applied
        * @param function Function that specifies the logic used to apply the
        * block
-       * Function parameters:
-       *  - Block @see block
-       *  - WsvQuery - world state view query interface for mutable storage
-       *  - hash256_t - hash of top block in blockchain
        * Function returns true if the block is successfully applied, false
        * otherwise.
        * @return True if block was successfully applied, false otherwise.
        */
       virtual bool apply(
           const shared_model::interface::Block &block,
-          std::function<bool(const shared_model::interface::Block &,
-                             WsvQuery &,
-                             const shared_model::interface::types::HashType &)>
-              function) = 0;
+          const PredicateType<shared_model::interface::Block> &function) = 0;
 
       virtual ~MutableStorage() = default;
     };
