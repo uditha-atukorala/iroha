@@ -20,6 +20,7 @@
 
 #include "interfaces/base/model_primitive.hpp"
 #include "interfaces/common_objects/types.hpp"
+#include "interfaces/transaction.hpp"
 
 namespace shared_model {
   namespace interface {
@@ -33,9 +34,17 @@ namespace shared_model {
        */
       virtual const TransactionHashesType &transactionHashes() const = 0;
 
-      std::string toString() const override;
+      std::string toString() const override {
+        return detail::PrettyStringBuilder()
+            .init("GetTransactions")
+            .appendAll(transactionHashes(),
+                       [](const auto &s) { return s.toString(); })
+            .finalize();
+      }
 
-      bool operator==(const ModelType &rhs) const override;
+      bool operator==(const ModelType &rhs) const override {
+        return transactionHashes() == rhs.transactionHashes();
+      }
     };
   }  // namespace interface
 }  // namespace shared_model

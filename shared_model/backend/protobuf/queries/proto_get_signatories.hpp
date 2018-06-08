@@ -18,9 +18,10 @@
 #ifndef IROHA_PROTO_GET_SIGNATORIES_H
 #define IROHA_PROTO_GET_SIGNATORIES_H
 
-#include "backend/protobuf/common_objects/trivial_proto.hpp"
 #include "interfaces/queries/get_signatories.hpp"
+
 #include "queries.pb.h"
+#include "utils/lazy_initializer.hpp"
 
 namespace shared_model {
   namespace proto {
@@ -29,18 +30,23 @@ namespace shared_model {
                                                       GetSignatories> {
      public:
       template <typename QueryType>
-      explicit GetSignatories(QueryType &&query);
+      explicit GetSignatories(QueryType &&query)
+          : CopyableProto(std::forward<QueryType>(query)) {}
 
-      GetSignatories(const GetSignatories &o);
+      GetSignatories(const GetSignatories &o) : GetSignatories(o.proto_) {}
 
-      GetSignatories(GetSignatories &&o) noexcept;
+      GetSignatories(GetSignatories &&o) noexcept
+          : GetSignatories(std::move(o.proto_)) {}
 
-      const interface::types::AccountIdType &accountId() const override;
+      const interface::types::AccountIdType &accountId() const override {
+        return account_signatories_.account_id();
+      }
 
      private:
       // ------------------------------| fields |-------------------------------
 
-      const iroha::protocol::GetSignatories &account_signatories_;
+      const iroha::protocol::GetSignatories &account_signatories_{
+          proto_->payload().get_account_signatories()};
     };
 
   }  // namespace proto

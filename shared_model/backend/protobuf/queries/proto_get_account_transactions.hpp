@@ -18,9 +18,10 @@
 #ifndef IROHA_GET_ACCOUNT_TRANSACTIONS_H
 #define IROHA_GET_ACCOUNT_TRANSACTIONS_H
 
-#include "backend/protobuf/common_objects/trivial_proto.hpp"
 #include "interfaces/queries/get_account_transactions.hpp"
+
 #include "queries.pb.h"
+#include "utils/lazy_initializer.hpp"
 
 namespace shared_model {
   namespace proto {
@@ -30,18 +31,24 @@ namespace shared_model {
                                GetAccountTransactions> {
      public:
       template <typename QueryType>
-      explicit GetAccountTransactions(QueryType &&query);
+      explicit GetAccountTransactions(QueryType &&query)
+          : CopyableProto(std::forward<QueryType>(query)) {}
 
-      GetAccountTransactions(const GetAccountTransactions &o);
+      GetAccountTransactions(const GetAccountTransactions &o)
+          : GetAccountTransactions(o.proto_) {}
 
-      GetAccountTransactions(GetAccountTransactions &&o) noexcept;
+      GetAccountTransactions(GetAccountTransactions &&o) noexcept
+          : GetAccountTransactions(std::move(o.proto_)) {}
 
-      const interface::types::AccountIdType &accountId() const override;
+      const interface::types::AccountIdType &accountId() const override {
+        return account_transactions_.account_id();
+      }
 
      private:
       // ------------------------------| fields |-------------------------------
 
-      const iroha::protocol::GetAccountTransactions &account_transactions_;
+      const iroha::protocol::GetAccountTransactions &account_transactions_{
+          proto_->payload().get_account_transactions()};
     };
 
   }  // namespace proto

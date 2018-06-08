@@ -18,9 +18,10 @@
 #ifndef IROHA_PROTO_GET_ROLE_PERMISSIONS_H
 #define IROHA_PROTO_GET_ROLE_PERMISSIONS_H
 
-#include "backend/protobuf/common_objects/trivial_proto.hpp"
 #include "interfaces/queries/get_role_permissions.hpp"
+
 #include "queries.pb.h"
+#include "utils/lazy_initializer.hpp"
 
 namespace shared_model {
   namespace proto {
@@ -30,17 +31,23 @@ namespace shared_model {
                                GetRolePermissions> {
      public:
       template <typename QueryType>
-      explicit GetRolePermissions(QueryType &&query);
+      explicit GetRolePermissions(QueryType &&query)
+          : CopyableProto(std::forward<QueryType>(query)) {}
 
-      GetRolePermissions(const GetRolePermissions &o);
+      GetRolePermissions(const GetRolePermissions &o)
+          : GetRolePermissions(o.proto_) {}
 
-      GetRolePermissions(GetRolePermissions &&o) noexcept;
+      GetRolePermissions(GetRolePermissions &&o) noexcept
+          : GetRolePermissions(std::move(o.proto_)) {}
 
-      const interface::types::RoleIdType &roleId() const override;
+      const interface::types::RoleIdType &roleId() const override {
+        return role_permissions_.role_id();
+      }
 
      private:
       // ------------------------------| fields |-------------------------------
-      const iroha::protocol::GetRolePermissions &role_permissions_;
+      const iroha::protocol::GetRolePermissions &role_permissions_{
+          proto_->payload().get_role_permissions()};
     };
 
   }  // namespace proto

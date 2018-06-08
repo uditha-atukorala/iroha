@@ -18,9 +18,10 @@
 #ifndef IROHA_PROTO_GET_ACCOUNT_DETAIL_HPP
 #define IROHA_PROTO_GET_ACCOUNT_DETAIL_HPP
 
-#include "backend/protobuf/common_objects/trivial_proto.hpp"
 #include "interfaces/queries/get_account_detail.hpp"
+
 #include "queries.pb.h"
+#include "utils/lazy_initializer.hpp"
 
 namespace shared_model {
   namespace proto {
@@ -30,19 +31,26 @@ namespace shared_model {
                                GetAccountDetail> {
      public:
       template <typename QueryType>
-      explicit GetAccountDetail(QueryType &&query);
+      explicit GetAccountDetail(QueryType &&query)
+          : CopyableProto(std::forward<QueryType>(query)) {}
 
-      GetAccountDetail(const GetAccountDetail &o);
+      GetAccountDetail(const GetAccountDetail &o)
+          : GetAccountDetail(o.proto_) {}
 
-      GetAccountDetail(GetAccountDetail &&o) noexcept;
+      GetAccountDetail(GetAccountDetail &&o) noexcept
+          : GetAccountDetail(std::move(o.proto_)) {}
 
-      const interface::types::AccountIdType &accountId() const override;
+      const interface::types::AccountIdType &accountId() const override {
+        return account_detail_.account_id();
+      }
 
      private:
       // ------------------------------| fields |-------------------------------
 
-      const iroha::protocol::GetAccountDetail &account_detail_;
+      const iroha::protocol::GetAccountDetail &account_detail_{
+          proto_->payload().get_account_detail()};
     };
+
   }  // namespace proto
 }  // namespace shared_model
 

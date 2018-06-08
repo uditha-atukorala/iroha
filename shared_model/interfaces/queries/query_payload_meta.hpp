@@ -35,7 +35,11 @@ namespace shared_model {
        */
       virtual types::TimestampType createdTime() const = 0;
 
-      bool operator==(const ModelType &rhs) const override;
+      bool operator==(const ModelType &rhs) const override {
+        return creatorAccountId() == rhs.creatorAccountId()
+            && queryCounter() == rhs.queryCounter()
+            && createdTime() == rhs.createdTime();
+      }
     };
   }  // namespace interface
 }  // namespace shared_model

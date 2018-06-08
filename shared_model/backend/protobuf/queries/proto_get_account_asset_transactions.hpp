@@ -18,9 +18,10 @@
 #ifndef IROHA_GET_ACCOUNT_ASSET_TRANSACTIONS_H
 #define IROHA_GET_ACCOUNT_ASSET_TRANSACTIONS_H
 
-#include "backend/protobuf/common_objects/trivial_proto.hpp"
-#include "interfaces/queries/get_account_asset_transactions.hpp"
+#include "interfaces/queries/get_account_transactions.hpp"
+
 #include "queries.pb.h"
+#include "utils/lazy_initializer.hpp"
 
 namespace shared_model {
   namespace proto {
@@ -30,21 +31,29 @@ namespace shared_model {
                                GetAccountAssetTransactions> {
      public:
       template <typename QueryType>
-      explicit GetAccountAssetTransactions(QueryType &&query);
+      explicit GetAccountAssetTransactions(QueryType &&query)
+          : CopyableProto(std::forward<QueryType>(query)) {}
 
-      GetAccountAssetTransactions(const GetAccountAssetTransactions &o);
+      GetAccountAssetTransactions(const GetAccountAssetTransactions &o)
+          : GetAccountAssetTransactions(o.proto_) {}
 
-      GetAccountAssetTransactions(GetAccountAssetTransactions &&o) noexcept;
+      GetAccountAssetTransactions(GetAccountAssetTransactions &&o) noexcept
+          : GetAccountAssetTransactions(std::move(o.proto_)) {}
 
-      const interface::types::AccountIdType &accountId() const override;
+      const interface::types::AccountIdType &accountId() const override {
+        return account_asset_transactions_.account_id();
+      }
 
-      const interface::types::AssetIdType &assetId() const override;
+      const interface::types::AssetIdType &assetId() const override {
+        return account_asset_transactions_.asset_id();
+      }
 
      private:
       // ------------------------------| fields |-------------------------------
 
       const iroha::protocol::GetAccountAssetTransactions
-          &account_asset_transactions_;
+          &account_asset_transactions_{
+              proto_->payload().get_account_asset_transactions()};
     };
 
   }  // namespace proto

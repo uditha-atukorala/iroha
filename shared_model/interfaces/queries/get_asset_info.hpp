@@ -33,9 +33,16 @@ namespace shared_model {
        */
       virtual const types::AssetIdType &assetId() const = 0;
 
-      std::string toString() const override;
+      std::string toString() const override {
+        return detail::PrettyStringBuilder()
+            .init("GetAssetInfo")
+            .append("asset_id", assetId())
+            .finalize();
+      }
 
-      bool operator==(const ModelType &rhs) const override;
+      bool operator==(const ModelType &rhs) const override {
+        return assetId() == rhs.assetId();
+      }
     };
   }  // namespace interface
 }  // namespace shared_model
