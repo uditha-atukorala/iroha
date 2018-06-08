@@ -30,6 +30,9 @@ add_library(shared_model_proto_backend
     queries/impl/proto_get_transactions.cpp
     queries/impl/proto_blocks_query.cpp
     queries/impl/proto_query_payload_meta.cpp
+    query_responses/impl/proto_block_query_response.cpp
+    query_responses/impl/proto_block_response.cpp
+    query_responses/impl/proto_block_error_response.cpp
     )
 
 target_link_libraries(shared_model_proto_backend
