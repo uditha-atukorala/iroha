@@ -30,7 +30,7 @@ namespace shared_model {
         const std::string &private_key) {
       auto byte_string = iroha::hexstringToBytestring(private_key);
       if (not byte_string) {
-        throw std::invalid_argument("invalid seed");
+        throw std::runtime_error("invalid seed");
       }
       return crypto::CryptoProviderEd25519Sha3::generateKeypair(
           crypto::Seed(*byte_string));

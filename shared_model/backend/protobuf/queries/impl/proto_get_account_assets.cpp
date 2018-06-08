@@ -30,9 +30,5 @@ namespace shared_model {
       return account_assets_.account_id();
     }
 
-    const interface::types::AssetIdType &GetAccountAssets::assetId() const {
-      return account_assets_.asset_id();
-    }
-
   }  // namespace proto
 }  // namespace shared_model

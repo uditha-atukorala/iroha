@@ -32,10 +32,6 @@ namespace shared_model {
        * @return account identifier
        */
       virtual const types::AccountIdType &accountId() const = 0;
-      /**
-       * @return asset identifier
-       */
-      virtual const types::AssetIdType &assetId() const = 0;
 
       std::string toString() const override;
 

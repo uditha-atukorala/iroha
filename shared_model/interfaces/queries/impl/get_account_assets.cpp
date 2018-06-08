@@ -12,13 +12,12 @@ namespace shared_model {
       return detail::PrettyStringBuilder()
           .init("GetAccountAssets")
           .append("account_id", accountId())
-          .append("asset_id", assetId())
           .finalize();
     }
 
     // TODO 07/06/2018 Akvinikym: types of rhs.accountId() and rhs.assetId() should be different IR-1397
     bool GetAccountAssets::operator==(const ModelType &rhs) const {
-      return accountId() == rhs.accountId() and assetId() == rhs.assetId();
+      return accountId() == rhs.accountId();
     }
 
   }  // namespace interface
