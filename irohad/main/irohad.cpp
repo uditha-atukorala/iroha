@@ -156,8 +156,12 @@ int main(int argc, char *argv[]) {
 
   // check if at least one block is available in the ledger
   auto blocks_exist = false;
-  irohad.storage->getBlockQuery()->getTopBlocks(1).subscribe(
-      [&blocks_exist](auto block) { blocks_exist = true; });
+  irohad.storage->getBlockQuery()->getTopBlock().match(
+      [&blocks_exist](iroha::expected::Value<
+                      std::shared_ptr<shared_model::interface::Block>> block) {
+        blocks_exist = true;
+      },
+      [](iroha::expected::Error<std::string> error) {});
 
   if (not blocks_exist) {
     log->error(

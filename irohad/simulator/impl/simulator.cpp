@@ -66,25 +66,25 @@ namespace iroha {
         const shared_model::interface::Proposal &proposal) {
       log_->info("process proposal");
       // Get last block from local ledger
-      auto top_block_result = block_queries_->getTopBlock();
       auto block_fetched = false;
+      auto top_block_result = block_queries_->getTopBlock();
       top_block_result.match(
-          [&last_block, &block_fetched](
+          [&](
               expected::Value<std::shared_ptr<shared_model::interface::Block>>
                   &block) {
             last_block = block.value;
             block_fetched = true;
           },
-          [](expected::Error<std::string> &error) {
+          [this](expected::Error<std::string> &error) {
             log_->warn("Could not fetch last block: " + error.error);
           });
-
       if (not block_fetched) {
         return;
       }
-      if (last_block.get()->height() + 1 != proposal.height()) {
+
+      if (last_block->height() + 1 != proposal.height()) {
         log_->warn("Last block height: {}, proposal height: {}",
-                   last_block.get()->height(),
+                   last_block->height(),
                    proposal.height());
         return;
       }
@@ -117,7 +117,7 @@ namespace iroha {
       auto block = std::make_shared<shared_model::proto::Block>(
           shared_model::proto::UnsignedBlockBuilder()
               .height(block_queries_->getTopBlockHeight() + 1)
-              .prevHash(last_block.get()->hash())
+              .prevHash(last_block->hash())
               .transactions(proto_txs)
               .createdTime(proposal.createdTime())
               .build());

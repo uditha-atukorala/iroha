@@ -6,13 +6,23 @@
 #include "main/impl/ordering_init.hpp"
 #include "ametsuchi/ordering_service_persistent_state.hpp"
 #include "interfaces/common_objects/peer.hpp"
+#include "interfaces/common_objects/types.hpp"
+#include "interfaces/iroha_internal/block.hpp"
 
 namespace iroha {
   namespace network {
     auto OrderingInit::createGate(
         std::shared_ptr<OrderingGateTransport> transport,
         std::shared_ptr<ametsuchi::BlockQuery> block_query) {
-      auto height = block_query->getTopBlocks(1).as_blocking().last()->height();
+      shared_model::interface::types::HeightType height;
+      block_query->getTopBlock().match(
+          [&height](
+              expected::Value<std::shared_ptr<shared_model::interface::Block>>
+                  block) { height = block.value->height(); },
+          [](expected::Error<std::string> error) {
+            throw std::runtime_error("Ordering Gate creation failed! "
+                                     + error.error);
+          });
       auto gate =
           std::make_shared<ordering::OrderingGateImpl>(transport, height);
       log_->info("Creating Ordering Gate with initial height {}", height);
