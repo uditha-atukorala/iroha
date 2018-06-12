@@ -30,12 +30,12 @@
 namespace iroha {
   namespace ametsuchi {
 
-    class FlatFile;
+    class FlatFileImpl;
 
     struct ConnectionContext {
-      explicit ConnectionContext(std::unique_ptr<FlatFile> block_store);
+      explicit ConnectionContext(std::unique_ptr<FlatFileImpl> block_store);
 
-      std::unique_ptr<FlatFile> block_store;
+      std::unique_ptr<FlatFileImpl> block_store;
     };
 
     class StorageImpl : public Storage {
@@ -88,7 +88,7 @@ namespace iroha {
      protected:
       StorageImpl(std::string block_store_dir,
                   PostgresOptions postgres_options,
-                  std::unique_ptr<FlatFile> block_store);
+                  std::unique_ptr<FlatFileImpl> block_store);
 
       /**
        * Folder with raw blocks
@@ -99,7 +99,7 @@ namespace iroha {
       const PostgresOptions postgres_options_;
 
      private:
-      std::unique_ptr<FlatFile> block_store_;
+      std::unique_ptr<FlatFileImpl> block_store_;
 
       // Allows multiple readers and a single writer
       std::shared_timed_mutex rw_lock_;

@@ -23,14 +23,14 @@
 #include <pqxx/nontransaction>
 
 #include "ametsuchi/block_query.hpp"
-#include "ametsuchi/impl/flat_file/flat_file.hpp"
+#include "ametsuchi/impl/flat_file/impl/flat_file_impl.hpp"
 #include "logger/logger.hpp"
 #include "postgres_wsv_common.hpp"
 
 namespace iroha {
   namespace ametsuchi {
 
-    class FlatFile;
+    class FlatFileImpl;
 
     /**
      * Class which implements BlockQuery with a Postgres backend.
@@ -38,10 +38,10 @@ namespace iroha {
     class PostgresBlockQuery : public BlockQuery {
      public:
       PostgresBlockQuery(pqxx::nontransaction &transaction_,
-                         FlatFile &file_store);
+                         FlatFileImpl &file_store);
       PostgresBlockQuery(std::unique_ptr<pqxx::lazyconnection> connection,
                          std::unique_ptr<pqxx::nontransaction> transaction,
-                         FlatFile &file_store);
+                         FlatFileImpl &file_store);
 
       rxcpp::observable<wTransaction> getAccountTransactions(
           const shared_model::interface::types::AccountIdType &account_id)
@@ -102,7 +102,7 @@ namespace iroha {
       std::unique_ptr<pqxx::lazyconnection> connection_ptr_;
       std::unique_ptr<pqxx::nontransaction> transaction_ptr_;
 
-      FlatFile &block_store_;
+      FlatFileImpl &block_store_;
       pqxx::nontransaction &transaction_;
       logger::Logger log_;
       using ExecuteType = decltype(makeExecuteOptional(transaction_, log_));
