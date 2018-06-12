@@ -257,7 +257,7 @@ namespace iroha {
       MOCK_METHOD0(dropAll, void(void));
     };
 
-  };  // namespace ametsuchi
+  }  // namespace ametsuchi
 }  // namespace iroha
 
 #endif  // IROHA_AMETSUCHI_MOCKS_HPP
