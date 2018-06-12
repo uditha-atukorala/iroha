@@ -22,6 +22,7 @@
 #include "converters/protobuf/json_proto_converter.hpp"
 #include "framework/test_subscriber.hpp"
 #include "module/irohad/ametsuchi/ametsuchi_fixture.hpp"
+#include "module/irohad/ametsuchi/ametsuchi_mocks.hpp"
 #include "module/shared_model/builders/protobuf/test_block_builder.hpp"
 #include "module/shared_model/builders/protobuf/test_transaction_builder.hpp"
 
@@ -388,3 +389,17 @@ TEST_F(BlockQueryTest, HasTxWithInvalidHash) {
   shared_model::crypto::Hash invalid_tx_hash(zero_string);
   EXPECT_FALSE(blocks->hasTxWithHash(invalid_tx_hash));
 }
+
+/**
+ * @given block store with preinserted blocks
+ * @when getTopBlock is invoked on this block store
+ * @then returned top block's height is equal to the inserted one's
+ */
+TEST_F(BlockQueryTest, GetTopBlockSuccess) {
+  auto top_block_height = blocks->getTopBlock() |
+      [](iroha::expected::Value<std::shared_ptr<shared_model::interface::Block>>
+             block) { return block.value->height(); };
+  ASSERT_EQ(top_block_height, 2);
+}
+
+TEST_F(BlockQueryTest, GetTopBlockFail) {}

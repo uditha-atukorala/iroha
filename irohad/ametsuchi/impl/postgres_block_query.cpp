@@ -250,7 +250,7 @@ namespace iroha {
                 shared_model::proto::Block>(bytesToString(bytes));
           };
       if (not block) {
-        return expected::makeError("error while converting block from JSON");
+        return expected::makeError("error while fetching the last block");
       }
       return expected::makeValue(std::make_shared<shared_model::proto::Block>(
           std::move(block.value())));
