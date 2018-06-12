@@ -20,6 +20,7 @@ namespace iroha {
               expected::Value<std::shared_ptr<shared_model::interface::Block>>
                   block) { height = block.value->height(); },
           [](expected::Error<std::string> error) {
+            // TODO 12.06.18 Akvinikym: handle the exception IR-1415
             throw std::runtime_error("Ordering Gate creation failed! "
                                      + error.error);
           });
