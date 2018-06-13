@@ -250,7 +250,7 @@ RUN set -e; \
 
 # python bindings dependencies
 RUN set -e; \
-    pip install grpcio_tools Jinja2 twine; \
+    pip install grpcio_tools; \
     pip3 install grpcio_tools
 
 # install lcov
