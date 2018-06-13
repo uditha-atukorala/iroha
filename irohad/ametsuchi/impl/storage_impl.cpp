@@ -256,6 +256,7 @@ DROP TABLE IF EXISTS index_by_id_height_asset;
             stringToBytes(shared_model::converters::protobuf::modelToJson(
                 *std::static_pointer_cast<shared_model::proto::Block>(
                     block.second))));
+        notifier_.get_subscriber().on_next(block.second);
       }
 
       storage->transaction_->exec("COMMIT;");
