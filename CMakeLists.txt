@@ -15,6 +15,8 @@ SET(CMAKE_CXX_FLAGS_DEBUG   "-g -Wextra -Wno-unused-parameter -Wno-deprecated-de
 SET(CMAKE_CXX_OUTPUT_EXTENSION_REPLACE 1)
 SET(CMAKE_INSTALL_RPATH "../lib")
 
+SET(BENCHMARKING ON)
+
 if(COVERAGE)
   find_program(LCOV_PROGRAM lcov)
   if(NOT LCOV_PROGRAM)

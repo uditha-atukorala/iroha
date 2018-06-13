@@ -24,6 +24,7 @@
 #include "ametsuchi/impl/temporary_wsv_impl.hpp"
 #include "converters/protobuf/json_proto_converter.hpp"
 #include "postgres_ordering_service_persistent_state.hpp"
+#include "postgres_command_executor.hpp"
 
 namespace iroha {
   namespace ametsuchi {
@@ -63,6 +64,8 @@ namespace iroha {
       log_ = logger::log("StorageImpl");
 
       wsv_transaction_->exec(init_);
+      wsv_transaction_->exec(add_extansion);
+      wsv_transaction_->exec(add_asset_quantity_command);
       wsv_transaction_->exec(
           "SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY;");
     }

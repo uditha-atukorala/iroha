@@ -165,8 +165,7 @@ namespace iroha {
           "data) VALUES ("
           + transaction_.quote(account.accountId()) + ", "
           + transaction_.quote(account.domainId()) + ", "
-          + transaction_.quote(account.quorum())
-          + ", "
+          + transaction_.quote(account.quorum()) + ", "
           + transaction_.quote(account.jsonData()) + ");");
 
       auto message_gen = [&] {
@@ -390,6 +389,23 @@ namespace iroha {
                     "creator account id: '%s',\n key: '%s', value: '%s'")
                 % account_id % creator_account_id % key % val)
             .str();
+      };
+      return makeCommandResult(std::move(result), message_gen);
+    }
+
+    WsvCommandResult PostgresWsvCommand::addAssetQuantity(
+        const std::string &account_id,
+        const std::string &asset_id,
+        const std::string amount_value,
+        const int amount_precision) {
+      std::string query =
+          (boost::format("SELECT AddAssetQuantity('%s', '%s', '%s', %d);")
+           % account_id % asset_id % amount_value % amount_precision)
+              .str();
+//      auto *code = transaction_.exec(query).at(0).at(0).c_str();
+      auto result = execute_(query);
+      auto message_gen = [&] {
+        return (boost::format("failed to execute")).str();
       };
       return makeCommandResult(std::move(result), message_gen);
     }

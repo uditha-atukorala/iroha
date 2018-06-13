@@ -234,6 +234,11 @@ namespace iroha {
        */
       virtual WsvCommandResult insertDomain(
           const shared_model::interface::Domain &domain) = 0;
+
+      virtual WsvCommandResult addAssetQuantity(const std::string &account_id,
+                                                const std::string &asset_id,
+                                                const std::string amount_value,
+                                                const int amount_precision) = 0;
     };
 
   }  // namespace ametsuchi
