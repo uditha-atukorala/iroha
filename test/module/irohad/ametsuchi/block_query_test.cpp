@@ -29,6 +29,8 @@
 using namespace iroha::ametsuchi;
 using namespace framework::test_subscriber;
 
+using testing::Return;
+
 class BlockQueryTest : public AmetsuchiTest {
  protected:
   void SetUp() override {
@@ -37,6 +39,7 @@ class BlockQueryTest : public AmetsuchiTest {
     auto tmp = FlatFileImpl::create(block_store_path);
     ASSERT_TRUE(tmp);
     file = std::move(*tmp);
+    mock_file = std::make_shared<MockFlatFile>();
     postgres_connection = std::make_unique<pqxx::lazyconnection>(pgopt_);
     try {
       postgres_connection->activate();
@@ -48,6 +51,8 @@ class BlockQueryTest : public AmetsuchiTest {
 
     index = std::make_shared<PostgresBlockIndex>(*transaction);
     blocks = std::make_shared<PostgresBlockQuery>(*transaction, *file);
+    empty_blocks =
+        std::make_shared<PostgresBlockQuery>(*transaction, *mock_file);
 
     transaction->exec(init_);
 
@@ -96,8 +101,10 @@ class BlockQueryTest : public AmetsuchiTest {
   std::unique_ptr<pqxx::nontransaction> transaction;
   std::vector<shared_model::crypto::Hash> tx_hashes;
   std::shared_ptr<BlockQuery> blocks;
+  std::shared_ptr<BlockQuery> empty_blocks;
   std::shared_ptr<BlockIndex> index;
   std::unique_ptr<FlatFileImpl> file;
+  std::shared_ptr<MockFlatFile> mock_file;
   std::string creator1 = "user1@test";
   std::string creator2 = "user2@test";
   std::size_t blocks_total{0};
@@ -309,7 +316,8 @@ TEST_F(BlockQueryTest, GetBlockButItIsNotJSON) {
   size_t block_n = 1;
 
   // write something that is NOT JSON to block #1
-  auto block_path = fs::path{block_store_path} / FlatFileImpl::id_to_name(block_n);
+  auto block_path =
+      fs::path{block_store_path} / FlatFileImpl::id_to_name(block_n);
   fs::ofstream block_file(block_path);
   std::string content = R"(this is definitely not json)";
   block_file << content;
@@ -334,7 +342,8 @@ TEST_F(BlockQueryTest, GetBlockButItIsInvalidBlock) {
   size_t block_n = 1;
 
   // write bad block instead of block #1
-  auto block_path = fs::path{block_store_path} / FlatFileImpl::id_to_name(block_n);
+  auto block_path =
+      fs::path{block_store_path} / FlatFileImpl::id_to_name(block_n);
   fs::ofstream block_file(block_path);
   std::string content = R"({
   "testcase": [],
@@ -397,9 +406,21 @@ TEST_F(BlockQueryTest, HasTxWithInvalidHash) {
  */
 TEST_F(BlockQueryTest, GetTopBlockSuccess) {
   auto top_block_height = blocks->getTopBlock() |
-      [](iroha::expected::Value<std::shared_ptr<shared_model::interface::Block>>
-             block) { return block.value->height(); };
+      [](auto block) { return block->height(); };
   ASSERT_EQ(top_block_height, 2);
 }
 
-TEST_F(BlockQueryTest, GetTopBlockFail) {}
+/**
+ * @given block store with mocked flat file
+ * @when getTopBlock is invoked on this block store
+ * @then result must be a string error, because no block was fetched
+ */
+TEST_F(BlockQueryTest, GetTopBlockFail) {
+  EXPECT_CALL(*mock_file, last_id()).WillOnce(Return(0));
+  EXPECT_CALL(*mock_file, get(mock_file->last_id()))
+      .WillOnce(Return(boost::none));
+
+  auto top_block_error = empty_blocks->getTopBlock() |
+      [](auto error) { return error.error; };
+  ASSERT_EQ(top_block_error, "error while fetching the last block");
+}
