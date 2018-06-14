@@ -8,6 +8,7 @@
 
 #include <boost/optional.hpp>
 #include <string>
+#include <vector>
 
 namespace iroha {
 
@@ -16,14 +17,12 @@ namespace iroha {
     /**
      * Solid storage interface
      */
-    class FlatFile {
+    class KeyValueStorage {
      public:
       /**
        * Type of storage key
        */
       using Identifier = uint32_t;
-
-      static const uint32_t DIGIT_CAPACITY = 16;
 
       /**
        * Add entity with binary data
@@ -52,7 +51,7 @@ namespace iroha {
 
       virtual void dropAll() = 0;
 
-      virtual ~FlatFile() = default;
+      virtual ~KeyValueStorage() = default;
     };
   }  // namespace ametsuchi
 }  // namespace iroha

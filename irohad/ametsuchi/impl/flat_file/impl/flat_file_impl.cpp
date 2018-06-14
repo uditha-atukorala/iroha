@@ -1,21 +1,10 @@
 /**
- * Copyright Soramitsu Co., Ltd. 2017 All Rights Reserved.
- * http://soramitsu.co.jp
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *        http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Copyright Soramitsu Co., Ltd. All Rights Reserved.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "flat_file_impl.hpp"
+#include "ametsuchi/impl/flat_file/impl/flat_file_impl.hpp"
+
 #include <boost/filesystem.hpp>
 #include <boost/range/adaptor/indexed.hpp>
 #include <boost/range/algorithm/find_if.hpp>
@@ -37,7 +26,7 @@ std::string FlatFileImpl::id_to_name(Identifier id) {
 
 boost::optional<std::unique_ptr<FlatFileImpl>> FlatFileImpl::create(
     const std::string &path) {
-  auto log_ = logger::log("FlatFile::create()");
+  auto log_ = logger::log("KeyValueStorage::create()");
 
   boost::system::error_code err;
   if (not boost::filesystem::is_directory(path, err)
@@ -121,10 +110,10 @@ void FlatFileImpl::dropAll() {
 // ----------| private API |----------
 
 FlatFileImpl::FlatFileImpl(Identifier current_id,
-                   const std::string &path,
-                   FlatFileImpl::private_tag)
+                           const std::string &path,
+                           FlatFileImpl::private_tag)
     : dump_dir_(path) {
-  log_ = logger::log("FlatFile");
+  log_ = logger::log("KeyValueStorage");
   current_id_.store(current_id);
 }
 

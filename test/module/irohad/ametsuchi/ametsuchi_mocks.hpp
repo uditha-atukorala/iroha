@@ -28,7 +28,7 @@
 #include "ametsuchi/temporary_factory.hpp"
 #include "ametsuchi/temporary_wsv.hpp"
 #include "ametsuchi/wsv_query.hpp"
-#include "ametsuchi/impl/flat_file/flat_file.hpp"
+#include "ametsuchi/key_value_storage.hpp"
 #include "common/result.hpp"
 #include "interfaces/common_objects/peer.hpp"
 
@@ -247,11 +247,11 @@ namespace iroha {
       }
     };
 
-    class MockFlatFile : public FlatFile {
+    class MockKeyValueStorage : public KeyValueStorage {
      public:
-      MOCK_METHOD2(add, bool(Identifier id, const std::vector<uint8_t> &blob));
+      MOCK_METHOD2(add, bool(Identifier, const std::vector<uint8_t> &));
       MOCK_CONST_METHOD1(get,
-                         boost::optional<std::vector<uint8_t>>(Identifier id));
+                         boost::optional<std::vector<uint8_t>>(Identifier));
       MOCK_CONST_METHOD0(directory, std::string(void));
       MOCK_CONST_METHOD0(last_id, Identifier(void));
       MOCK_METHOD0(dropAll, void(void));
