@@ -33,7 +33,7 @@ namespace iroha {
       void SetUp() override {
         AmetsuchiTest::SetUp();
 
-        auto tmp = FlatFileImpl::create(block_store_path);
+        auto tmp = FlatFile::create(block_store_path);
         ASSERT_TRUE(tmp);
         file = std::move(*tmp);
 
@@ -64,7 +64,7 @@ namespace iroha {
       std::vector<shared_model::crypto::Hash> tx_hashes;
       std::shared_ptr<BlockQuery> blocks;
       std::shared_ptr<BlockIndex> index;
-      std::unique_ptr<FlatFileImpl> file;
+      std::unique_ptr<FlatFile> file;
       std::string creator1 = "user1@test";
       std::string creator2 = "user2@test";
       std::string creator3 = "user3@test";

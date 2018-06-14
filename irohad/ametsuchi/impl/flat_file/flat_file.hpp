@@ -19,7 +19,7 @@ namespace iroha {
     /**
      * Solid storage based on raw files
      */
-    class FlatFileImpl : public KeyValueStorage {
+    class FlatFile : public KeyValueStorage {
       /**
        * Private tag used to construct unique and shared pointers
        * without new operator
@@ -50,7 +50,7 @@ namespace iroha {
        * @param path - target path for creating
        * @return created storage
        */
-      static boost::optional<std::unique_ptr<FlatFileImpl>> create(
+      static boost::optional<std::unique_ptr<FlatFile>> create(
           const std::string &path);
 
       bool add(Identifier id, const std::vector<uint8_t> &blob) override;
@@ -75,13 +75,13 @@ namespace iroha {
 
       // ----------| modify operations |----------
 
-      FlatFileImpl(const FlatFileImpl &rhs) = delete;
+      FlatFile(const FlatFile &rhs) = delete;
 
-      FlatFileImpl(FlatFileImpl &&rhs) = delete;
+      FlatFile(FlatFile &&rhs) = delete;
 
-      FlatFileImpl &operator=(const FlatFileImpl &rhs) = delete;
+      FlatFile &operator=(const FlatFile &rhs) = delete;
 
-      FlatFileImpl &operator=(FlatFileImpl &&rhs) = delete;
+      FlatFile &operator=(FlatFile &&rhs) = delete;
 
       // ----------| private API |----------
 
@@ -90,9 +90,9 @@ namespace iroha {
        * @param last_id - maximal key written in storage
        * @param path - folder of storage
        */
-      FlatFileImpl(Identifier last_id,
+      FlatFile(Identifier last_id,
                    const std::string &path,
-                   FlatFileImpl::private_tag);
+                   FlatFile::private_tag);
 
      private:
       // ----------| private fields |----------
@@ -110,7 +110,7 @@ namespace iroha {
       logger::Logger log_;
 
      public:
-      ~FlatFileImpl() = default;
+      ~FlatFile() = default;
     };
   }  // namespace ametsuchi
 }  // namespace iroha

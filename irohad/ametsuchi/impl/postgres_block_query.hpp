@@ -23,14 +23,14 @@
 #include <pqxx/nontransaction>
 
 #include "ametsuchi/block_query.hpp"
-#include "ametsuchi/impl/flat_file/impl/flat_file_impl.hpp"
+#include "ametsuchi/impl/flat_file/flat_file.hpp"
 #include "logger/logger.hpp"
 #include "postgres_wsv_common.hpp"
 
 namespace iroha {
   namespace ametsuchi {
 
-    class FlatFileImpl;
+    class FlatFile;
 
     /**
      * Class which implements BlockQuery with a Postgres backend.
