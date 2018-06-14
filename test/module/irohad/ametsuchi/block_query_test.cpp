@@ -39,7 +39,7 @@ class BlockQueryTest : public AmetsuchiTest {
     auto tmp = FlatFileImpl::create(block_store_path);
     ASSERT_TRUE(tmp);
     file = std::move(*tmp);
-    mock_file = std::make_shared<MockFlatFile>();
+    mock_file = std::make_shared<MockKeyValueStorage>();
     postgres_connection = std::make_unique<pqxx::lazyconnection>(pgopt_);
     try {
       postgres_connection->activate();
@@ -104,7 +104,7 @@ class BlockQueryTest : public AmetsuchiTest {
   std::shared_ptr<BlockQuery> empty_blocks;
   std::shared_ptr<BlockIndex> index;
   std::unique_ptr<FlatFileImpl> file;
-  std::shared_ptr<MockFlatFile> mock_file;
+  std::shared_ptr<MockKeyValueStorage> mock_file;
   std::string creator1 = "user1@test";
   std::string creator2 = "user2@test";
   std::size_t blocks_total{0};
@@ -405,9 +405,18 @@ TEST_F(BlockQueryTest, HasTxWithInvalidHash) {
  * @then returned top block's height is equal to the inserted one's
  */
 TEST_F(BlockQueryTest, GetTopBlockSuccess) {
-  auto top_block_height = blocks->getTopBlock() |
-      [](auto block) { return block->height(); };
-  ASSERT_EQ(top_block_height, 2);
+  boost::optional<shared_model::interface::types::HeightType> top_block_height;
+  blocks->getTopBlock().match(
+      [&top_block_height](
+          iroha::expected::Value<
+              std::shared_ptr<shared_model::interface::Block>> block) {
+        top_block_height = block.value->height();
+      },
+      [&top_block_height](iroha::expected::Error<std::string> error) {
+        top_block_height = boost::none;
+      });
+  ASSERT_TRUE(top_block_height);
+  ASSERT_EQ(top_block_height.value(), 2);
 }
 
 /**
@@ -416,11 +425,20 @@ TEST_F(BlockQueryTest, GetTopBlockSuccess) {
  * @then result must be a string error, because no block was fetched
  */
 TEST_F(BlockQueryTest, GetTopBlockFail) {
-  EXPECT_CALL(*mock_file, last_id()).WillOnce(Return(0));
+  EXPECT_CALL(*mock_file, last_id()).WillRepeatedly(Return(0));
   EXPECT_CALL(*mock_file, get(mock_file->last_id()))
       .WillOnce(Return(boost::none));
 
-  auto top_block_error = empty_blocks->getTopBlock() |
-      [](auto error) { return error.error; };
-  ASSERT_EQ(top_block_error, "error while fetching the last block");
+  boost::optional<std::string> top_block_error;
+  empty_blocks->getTopBlock().match(
+      [&top_block_error](
+          iroha::expected::Value<
+              std::shared_ptr<shared_model::interface::Block>> block) {
+        top_block_error = boost::none;
+      },
+      [&top_block_error](iroha::expected::Error<std::string> error) {
+        top_block_error = error.error;
+      });
+  ASSERT_TRUE(top_block_error);
+  ASSERT_EQ(top_block_error.value(), "error while fetching the last block");
 }
