@@ -32,7 +32,7 @@ namespace iroha {
       storage.getBlockQuery()->getBlocksFrom(1).as_blocking().subscribe(
           [&blocks](auto block) { blocks.push_back(std::move(block)); });
 
-      storage.dropStorage();
+      storage.reset();
       storage.init();
 
       if (not storage.insertBlocks(blocks))

@@ -152,7 +152,7 @@ namespace iroha {
       exec(postgres_options_.optionsString(), init_);
     }
 
-    void StorageImpl::cleanupTables() {
+    void StorageImpl::reset() {
       log_->info("Drop tables");
       exec(postgres_options_.optionsString(), R"(
 DROP TABLE IF EXISTS account_has_signatory;
@@ -176,19 +176,12 @@ DROP TABLE IF EXISTS index_by_id_height_asset;
     void StorageImpl::dropStorage() {
       log_->info("Drop ledger");
 
-      cleanupTables();
+      reset();
       if (auto dbname = postgres_options_.dbname()) {
         log_->info("Drop database");
         // kill all active connections and drop database
         pqxx::connection conn(postgres_options_.optionsStringWithoutDbName());
         pqxx::nontransaction handle(conn);
-        try {
-          handle.exec(
-              "SELECT pg_terminate_backend(pg_stat_activity.pid) "
-              " FROM pg_stat_activity WHERE pg_stat_activity.datname = "
-              + dbname.value() + " AND pid <> pg_backend_pid();");
-        } catch (...) {
-        }
         handle.exec("DROP DATABASE IF EXISTS " + dbname.value() + ";");
       }
 

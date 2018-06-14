@@ -76,7 +76,12 @@ namespace iroha {
       on_commit() = 0;
 
       /**
-       * Remove all information from ledger
+       *  Remove all information from the storage
+       */
+      virtual void reset() = 0;
+
+      /**
+       * Remove all information from storage
        */
       virtual void dropStorage() = 0;
 

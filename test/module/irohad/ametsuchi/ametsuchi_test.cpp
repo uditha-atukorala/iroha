@@ -681,7 +681,7 @@ TEST_F(AmetsuchiTest, TestingStorageWhenDropAll) {
 
     log->info("Drop ledger");
 
-    storage->cleanupTables();
+    storage->reset();
     ASSERT_NO_THROW(storage->init());
 
     ASSERT_EQ(0, wsv->getPeers().value().size());

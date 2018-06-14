@@ -45,7 +45,7 @@ namespace iroha {
 
      protected:
       virtual void clear() {
-        storage->cleanupTables();
+        storage->reset();
 
         iroha::remove_dir_contents(block_store_path);
       }
@@ -58,7 +58,7 @@ namespace iroha {
                      FAIL() << "StorageImpl: " << error.error;
                    });
 
-        storage->cleanupTables();
+        storage->reset();
         storage->init();
 
         try {
@@ -70,7 +70,7 @@ namespace iroha {
       }
 
       void TearDown() override {
-        clear();
+        storage->dropStorage();
       }
 
       std::shared_ptr<StorageImpl> storage;

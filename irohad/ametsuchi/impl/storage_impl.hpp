@@ -75,7 +75,7 @@ namespace iroha {
               &blocks) override;
 
       void init() override;
-      void cleanupTables();
+      void reset() override;
       void dropStorage() override;
 
       void commit(std::unique_ptr<MutableStorage> mutableStorage) override;
