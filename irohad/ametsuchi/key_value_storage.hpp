@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef IROHA_FLAT_FILE_HPP
-#define IROHA_FLAT_FILE_HPP
+#ifndef IROHA_KV_STORAGE_HPP
+#define IROHA_KV_STORAGE_HPP
 
 #include <boost/optional.hpp>
 #include <string>
@@ -56,4 +56,4 @@ namespace iroha {
   }  // namespace ametsuchi
 }  // namespace iroha
 
-#endif  // IROHA_FLAT_FILE_HPP
+#endif  // IROHA_KV_STORAGE_HPP

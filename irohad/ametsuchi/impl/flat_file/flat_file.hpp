@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef IROHA_FLAT_FILE_IMPL_HPP
-#define IROHA_FLAT_FILE_IMPL_HPP
+#ifndef IROHA_FLAT_FILE_HPP
+#define IROHA_FLAT_FILE_HPP
 
 #include "ametsuchi/key_value_storage.hpp"
 
@@ -91,8 +91,8 @@ namespace iroha {
        * @param path - folder of storage
        */
       FlatFile(Identifier last_id,
-                   const std::string &path,
-                   FlatFile::private_tag);
+               const std::string &path,
+               FlatFile::private_tag);
 
      private:
       // ----------| private fields |----------
@@ -114,4 +114,4 @@ namespace iroha {
     };
   }  // namespace ametsuchi
 }  // namespace iroha
-#endif  // IROHA_FLAT_FILE_IMPL_HPP
+#endif  // IROHA_FLAT_FILE_HPP

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "flat_file.hpp"
+#include "ametsuchi/impl/flat_file/flat_file.hpp"
 
 #include <boost/filesystem.hpp>
 #include <boost/range/adaptor/indexed.hpp>
@@ -26,7 +26,7 @@ std::string FlatFile::id_to_name(Identifier id) {
 
 boost::optional<std::unique_ptr<FlatFile>> FlatFile::create(
     const std::string &path) {
-  auto log_ = logger::log("KeyValueStorage::create()");
+  auto log_ = logger::log("FlatFile::create()");
 
   boost::system::error_code err;
   if (not boost::filesystem::is_directory(path, err)
@@ -110,10 +110,10 @@ void FlatFile::dropAll() {
 // ----------| private API |----------
 
 FlatFile::FlatFile(Identifier current_id,
-                           const std::string &path,
-                           FlatFile::private_tag)
+                   const std::string &path,
+                   FlatFile::private_tag)
     : dump_dir_(path) {
-  log_ = logger::log("KeyValueStorage");
+  log_ = logger::log("FlatFile");
   current_id_.store(current_id);
 }
 
