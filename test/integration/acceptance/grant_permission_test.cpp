@@ -10,10 +10,10 @@
 #include "builders/protobuf/transaction.hpp"
 #include "framework/integration_framework/integration_test_framework.hpp"
 #include "framework/specified_visitor.hpp"
-#include "validators/permissions.hpp"
 
 using namespace integration_framework;
 using namespace shared_model;
+using namespace shared_model::interface;
 
 class GrantPermissionTest : public AcceptanceFixture {
  public:
@@ -24,18 +24,26 @@ class GrantPermissionTest : public AcceptanceFixture {
    * @param perms are the permissions of the user
    * @return built tx and a hash of its payload
    */
-  auto makeAccountWithPerms(const std::string &user,
-                            const crypto::Keypair &key,
-                            const std::vector<std::string> &perms,
-                            const std::string &role) {
+  auto makeAccountWithPerms(
+      const std::string &user,
+      const crypto::Keypair &key,
+      const shared_model::interface::RolePermissionSet &perms,
+      const std::string &role) {
     return createUserWithPerms(user, key.publicKey(), role, perms)
         .build()
         .signAndAddSignature(kAdminKeypair)
         .finish();
   }
 
-  auto createTwoAccounts(const std::vector<std::string> &perm1,
-                         const std::vector<std::string> &perm2) {
+  /**
+   * Creates two accounts with corresponding permission sets
+   * @param perm1 set of permissions for account #1
+   * @param perm2 set of permissions for account #2
+   * @return reference to ITF object with two transactions
+   */
+  auto createTwoAccounts(
+      const shared_model::interface::RolePermissionSet &perm1,
+      const shared_model::interface::RolePermissionSet &perm2) {
     auto itf = std::make_shared<IntegrationTestFramework>(1);
     (*itf)
         .setInitialState(kAdminKeypair)
@@ -54,7 +62,7 @@ class GrantPermissionTest : public AcceptanceFixture {
    * Forms a transaction such that creator of transaction
    * grants permittee a permission
    * @param creatorAccountName — a name, e.g. user
-   * @param permitteeAccountId — an id of grantee, mostlikely name@test
+   * @param permitteeAccountId — an id of grantee, most likely name@test
    * @param grantPermission — any permission from the set of grantable
    * @return a Transaction object
    */
@@ -62,7 +70,7 @@ class GrantPermissionTest : public AcceptanceFixture {
       const std::string &creator_account_name,
       const crypto::Keypair &creator_key,
       const std::string &permitee_account_name,
-      const std::string &grant_permission) {
+      const interface::permissions::Grantable &grant_permission) {
     const std::string creator_account_id = creator_account_name + "@" + kDomain;
     const std::string permitee_account_id =
         permitee_account_name + "@" + kDomain;
@@ -278,11 +286,10 @@ class GrantPermissionTest : public AcceptanceFixture {
    * @param perm
    * @return
    */
-  auto concatenateVectors(
-      std::initializer_list<std::vector<std::string>> perm) {
-    std::vector<std::string> result;
+  auto concatenateVectors(std::initializer_list<RolePermissionSet> perm) {
+    RolePermissionSet result;
     for (auto &p : perm) {
-      result.insert(result.end(), p.begin(), p.end());
+      result |= p;
     }
     return result;
   }
@@ -371,40 +378,38 @@ class GrantPermissionTest : public AcceptanceFixture {
   const std::string kAccountDetailKey = "some_key";
   const std::string kAccountDetailValue = "some_value";
 
-  const std::vector<std::string> kCanGetMySignatories{
-      permissions::can_get_my_signatories};
+  const RolePermissionSet kCanGetMySignatories{
+      permissions::Role::kGetMySignatories};
 
-  const std::vector<std::string> kCanGetMyAccount{
-      permissions::can_get_my_account};
+  const RolePermissionSet kCanGetMyAccount{permissions::Role::kGetMyAccount};
 
-  const std::vector<std::string> kCanGetMyAccountDetail{
-      permissions::can_get_my_acc_detail};
+  const RolePermissionSet kCanGetMyAccountDetail{
+      permissions::Role::kGetMyAccDetail};
 
-  const std::vector<std::string> kCanTransfer{permissions::can_transfer};
+  const RolePermissionSet kCanTransfer{permissions::Role::kTransfer};
 
-  const std::vector<std::string> kCanReceive{permissions::can_receive};
+  const RolePermissionSet kCanReceive{permissions::Role::kReceive};
 
-  const std::vector<std::string> kCanGrantCanAddMySignatory{
-      permissions::can_grant + permissions::can_add_my_signatory};
+  const RolePermissionSet kCanGrantCanAddMySignatory{
+      permissions::Role::kAddMySignatory};
 
-  const std::vector<std::string> kCanGrantCanRemoveMySignatory{
-      permissions::can_grant + permissions::can_remove_my_signatory};
+  const RolePermissionSet kCanGrantCanRemoveMySignatory{
+      permissions::Role::kRemoveMySignatory};
 
-  const std::vector<std::string> kCanGrantCanSetMyQuorum{
-      permissions::can_grant + permissions::can_set_my_quorum};
+  const RolePermissionSet kCanGrantCanSetMyQuorum{
+      permissions::Role::kSetMyQuorum};
 
-  const std::vector<std::string> kCanGrantCanSetMyAccountDetail{
-      permissions::can_grant + permissions::can_set_my_account_detail};
+  const RolePermissionSet kCanGrantCanSetMyAccountDetail{
+      permissions::Role::kSetMyAccountDetail};
 
-  const std::vector<std::string> kCanTransferMyAssets{
-      permissions::can_grant + permissions::can_transfer_my_assets};
+  const RolePermissionSet kCanTransferMyAssets{
+      permissions::Role::kTransferMyAssets};
 
-  const std::vector<std::string> kCanGrantAll{
-      permissions::can_grant + permissions::can_add_my_signatory,
-      permissions::can_grant + permissions::can_remove_my_signatory,
-      permissions::can_grant + permissions::can_set_my_quorum,
-      permissions::can_grant + permissions::can_set_my_account_detail,
-      permissions::can_grant + permissions::can_transfer_my_assets};
+  const RolePermissionSet kCanGrantAll{permissions::Role::kAddMySignatory,
+                                       permissions::Role::kRemoveMySignatory,
+                                       permissions::Role::kSetMyQuorum,
+                                       permissions::Role::kSetMyAccountDetail,
+                                       permissions::Role::kTransferMyAssets};
 };
 
 /**
@@ -424,63 +429,10 @@ TEST_F(GrantPermissionTest, GrantToInexistingAccount) {
       .sendTx(accountGrantToAccount(kAccount1,
                                     kAccount1Keypair,
                                     kAccount2,
-                                    permissions::can_add_my_signatory))
+                                    permissions::Grantable::kAddMySignatory))
       .skipProposal()
       .checkBlock(
           [](auto &block) { ASSERT_EQ(block->transactions().size(), 0); })
-      .done();
-}
-
-/**
- * C257 Grant empty permission
- * @given an account with rights to grant rights to other accounts
- * @when the account grants rights to an existing account
- * AND a granted permission is empty
- * @then this transaction is stateless invalid
- * AND it is not written in the block
- */
-TEST_F(GrantPermissionTest, GrantEmptyPermission) {
-  createTwoAccounts(kCanGrantAll, kCanReceive)
-      ->sendTx(
-          accountGrantToAccount(
-              kAccount1, kAccount1Keypair, kAccount2, kEmptyPermissionName),
-          checkStatelessInvalid)
-      .done();
-}
-
-/**
- * C258 Grant permission name, which does not exist
- * @given an account with rights to grant rights to other accounts
- * @when the account grants rights to an existing account
- * AND a granted permission is non-existent
- * @then this transaction is stateless invalid
- * AND it is not written in the block
- */
-TEST_F(GrantPermissionTest, GrantNonexistentPermission) {
-  createTwoAccounts(kCanGrantAll, kCanReceive)
-      ->sendTx(accountGrantToAccount(kAccount1,
-                                     kAccount1Keypair,
-                                     kAccount2,
-                                     kNonexistentPermissionName),
-               checkStatelessInvalid)
-      .done();
-}
-
-/**
- * C259 Grant permission, which exists in the system, but is not grantable
- * @given an account with rights to grant rights to other accounts
- * @when the account grants rights to an existing account
- * AND a granted permission exists in the system, but is not grantable
- * @then this transaction is stateless invalid
- * AND it is not written in the block
- */
-TEST_F(GrantPermissionTest, GrantNotGrantablePermission) {
-  createTwoAccounts(kCanGrantAll, kCanReceive)
-      ->sendTx(accountGrantToAccount(kAccount1,
-                                     kAccount1Keypair,
-                                     kAccount2,
-                                     permissions::can_create_domain),
-               checkStatelessInvalid)
       .done();
 }
 
@@ -504,7 +456,7 @@ TEST_F(GrantPermissionTest, GrantAddSignatoryPermission) {
       ->sendTx(accountGrantToAccount(kAccount1,
                                      kAccount1Keypair,
                                      kAccount2,
-                                     permissions::can_add_my_signatory))
+                                     permissions::Grantable::kAddMySignatory))
       .skipProposal()
       .checkBlock(
           [](auto &block) { ASSERT_EQ(block->transactions().size(), 1); })
@@ -544,13 +496,13 @@ TEST_F(GrantPermissionTest, GrantRemoveSignatoryPermission) {
       ->sendTx(accountGrantToAccount(kAccount1,
                                      kAccount1Keypair,
                                      kAccount2,
-                                     permissions::can_add_my_signatory))
+                                     permissions::Grantable::kAddMySignatory))
       .skipProposal()
       .skipBlock()
       .sendTx(accountGrantToAccount(kAccount1,
                                     kAccount1Keypair,
                                     kAccount2,
-                                    permissions::can_remove_my_signatory))
+                                    permissions::Grantable::kRemoveMySignatory))
       .skipProposal()
       .checkBlock(
           [](auto &block) { ASSERT_EQ(block->transactions().size(), 1); })
@@ -596,13 +548,13 @@ TEST_F(GrantPermissionTest, GrantSetQuorumPermission) {
       ->sendTx(accountGrantToAccount(kAccount1,
                                      kAccount1Keypair,
                                      kAccount2,
-                                     permissions::can_set_my_quorum))
+                                     permissions::Grantable::kSetMyQuorum))
       .skipProposal()
       .skipBlock()
       .sendTx(accountGrantToAccount(kAccount1,
                                     kAccount1Keypair,
                                     kAccount2,
-                                    permissions::can_add_my_signatory))
+                                    permissions::Grantable::kAddMySignatory))
       .skipProposal()
       .skipBlock()
       .sendTx(
@@ -637,10 +589,11 @@ TEST_F(GrantPermissionTest, GrantSetAccountDetailPermission) {
   createTwoAccounts(concatenateVectors({kCanGrantCanSetMyAccountDetail,
                                         kCanGetMyAccountDetail}),
                     kCanReceive)
-      ->sendTx(accountGrantToAccount(kAccount1,
-                                     kAccount1Keypair,
-                                     kAccount2,
-                                     permissions::can_set_my_account_detail))
+      ->sendTx(
+          accountGrantToAccount(kAccount1,
+                                kAccount1Keypair,
+                                kAccount2,
+                                permissions::Grantable::kSetMyAccountDetail))
       .skipProposal()
       .checkBlock(
           [](auto &block) { ASSERT_EQ(block->transactions().size(), 1); })
@@ -676,7 +629,7 @@ TEST_F(GrantPermissionTest, DISABLED_GrantTransferPermission) {
       ->sendTx(accountGrantToAccount(kAccount1,
                                      kAccount1Keypair,
                                      kAccount2,
-                                     permissions::can_transfer_my_assets))
+                                     permissions::Grantable::kTransferMyAssets))
       .skipProposal()
       .checkBlock(
           [](auto &block) { ASSERT_EQ(block->transactions().size(), 1); })
@@ -707,7 +660,7 @@ TEST_F(GrantPermissionTest, GrantWithoutGrantPermissions) {
       ->sendTx(accountGrantToAccount(kAccount1,
                                      kAccount1Keypair,
                                      kAccount2,
-                                     permissions::can_add_my_signatory))
+                                     permissions::Grantable::kAddMySignatory))
       .skipProposal()
       .checkBlock(
           [](auto &block) { ASSERT_EQ(block->transactions().size(), 0); })
@@ -728,13 +681,13 @@ TEST_F(GrantPermissionTest, GrantMoreThanOnce) {
       ->sendTx(accountGrantToAccount(kAccount1,
                                      kAccount1Keypair,
                                      kAccount2,
-                                     permissions::can_add_my_signatory))
+                                     permissions::Grantable::kAddMySignatory))
       .skipProposal()
       .skipBlock()
       .sendTx(accountGrantToAccount(kAccount1,
                                     kAccount1Keypair,
                                     kAccount2,
-                                    permissions::can_add_my_signatory))
+                                    permissions::Grantable::kAddMySignatory))
       .skipProposal()
       .checkBlock(
           [](auto &block) { ASSERT_EQ(block->transactions().size(), 0); })
