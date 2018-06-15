@@ -86,7 +86,7 @@ function(compile_proto_to_grpc_cpp PROTO)
   string(REGEX REPLACE "\\.proto$" ".grpc.pb.cc" GEN_GRPC_PB ${PROTO})
   add_custom_command(
       OUTPUT ${IROHA_SCHEMA_DIR}/${GEN_GRPC_PB_HEADER} ${IROHA_SCHEMA_DIR}/${GEN_GRPC_PB}
-      COMMAND ${CMAKE_COMMAND} -E env LD_LIBRARY_PATH=${protobuf_LIBRARY_DIR}:$ENV{LD_LIBRARY_PATH} "${protoc_EXECUTABLE}"
+      COMMAND ${CMAKE_COMMAND} -E env LD_LIBRARY_PATH=${protobuf_LIBRARY_DIR}:${grpc_plugin_support_LIBRARY_DIR}:$ENV{LD_LIBRARY_PATH} "${protoc_EXECUTABLE}"
       ARGS -I${protobuf_INCLUDE_DIR} -I. --grpc_out=${IROHA_SCHEMA_DIR} --plugin=protoc-gen-grpc="${grpc_CPP_PLUGIN}" ${PROTO}
       DEPENDS grpc_cpp_plugin ${IROHA_SCHEMA_DIR}/${PROTO}
       WORKING_DIRECTORY ${IROHA_SCHEMA_DIR}

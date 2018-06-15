@@ -1,6 +1,7 @@
 add_library(grpc UNKNOWN IMPORTED)
 add_library(grpc++ UNKNOWN IMPORTED)
 add_library(gpr UNKNOWN IMPORTED)
+add_library(grpc_plugin_support UNKNOWN IMPORTED)
 add_executable(grpc_cpp_plugin IMPORTED)
 
 find_path(grpc_INCLUDE_DIR grpc/grpc.h)
@@ -15,6 +16,9 @@ mark_as_advanced(grpc_grpc++_LIBRARY)
 find_library(gpr_LIBRARY gpr)
 mark_as_advanced(gpr_LIBRARY)
 
+find_library(grpc_plugin_support_LIBRARY grpc_plugin_support)
+mark_as_advanced(grpc_plugin_support_LIBRARY)
+
 find_library(address_sorting_LIBRARY address_sorting)
 mark_as_advanced(address_sorting_LIBRARY)
 
@@ -25,6 +29,7 @@ find_package_handle_standard_args(grpc DEFAULT_MSG
     grpc_LIBRARY
     grpc_INCLUDE_DIR
     gpr_LIBRARY
+    grpc_plugin_support_LIBRARY
     grpc_CPP_PLUGIN
     )
 
@@ -67,6 +72,9 @@ if (NOT grpc_FOUND)
   add_dependencies(grpc++ grpc_grpc)
   add_dependencies(grpc_cpp_plugin grpc_grpc protoc)
 endif ()
+
+get_filename_component(grpc_plugin_support_LIBRARY_DIR ${grpc_plugin_support_LIBRARY} DIRECTORY)
+mark_as_advanced(grpc_plugin_support_LIBRARY_DIR)
 
 set_target_properties(grpc PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES ${grpc_INCLUDE_DIR}
