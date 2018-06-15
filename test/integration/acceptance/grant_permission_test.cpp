@@ -37,19 +37,14 @@ class GrantPermissionTest : public AcceptanceFixture {
   auto createTwoAccounts(const std::vector<std::string> &perm1,
                          const std::vector<std::string> &perm2) {
     auto itf = std::make_shared<IntegrationTestFramework>(1);
-    (*itf).setInitialState(kAdminKeypair)
-        .sendTx(makeAccountWithPerms(
-            kAccount1,
-            kAccount1Keypair,
-            perm1,
-            kRole1))
+    (*itf)
+        .setInitialState(kAdminKeypair)
+        .sendTx(
+            makeAccountWithPerms(kAccount1, kAccount1Keypair, perm1, kRole1))
         .skipProposal()
         .skipBlock()
         .sendTx(
-            makeAccountWithPerms(kAccount2,
-                                 kAccount2Keypair,
-                                 perm2,
-                                 kRole2))
+            makeAccountWithPerms(kAccount2, kAccount2Keypair, perm2, kRole2))
         .skipProposal()
         .skipBlock();
     return itf;
@@ -313,9 +308,7 @@ class GrantPermissionTest : public AcceptanceFixture {
                         ASSERT_EQ(resp.keys().size(), quantity);
                         auto &keys = resp.keys();
 
-                        ASSERT_EQ((std::find(keys.begin(),
-                                             keys.end(),
-                                             signatory.publicKey())
+                        ASSERT_EQ((std::find(keys.begin(), keys.end(), signatory.publicKey())
                                       != keys.end()),
                                   is_contained);
                       });
@@ -355,10 +348,8 @@ class GrantPermissionTest : public AcceptanceFixture {
                         const auto &resp = boost::apply_visitor(
                             framework::SpecifiedVisitor<interface::AccountDetailResponse>(),
                             query_response.get());
-                        ASSERT_TRUE(
-                            resp.detail().find(key) != std::string::npos);
-                        ASSERT_TRUE(
-                            resp.detail().find(detail) != std::string::npos);
+                        ASSERT_TRUE(resp.detail().find(key) != std::string::npos);
+                        ASSERT_TRUE(resp.detail().find(detail) != std::string::npos);
                       });
     };
   }
@@ -449,9 +440,11 @@ TEST_F(GrantPermissionTest, GrantToInexistingAccount) {
  * AND it is not written in the block
  */
 TEST_F(GrantPermissionTest, GrantEmptyPermission) {
-  createTwoAccounts(kCanGrantAll, kCanReceive)->sendTx(accountGrantToAccount(
-          kAccount1, kAccount1Keypair, kAccount2, kEmptyPermissionName),
-                                                       checkStatelessInvalid)
+  createTwoAccounts(kCanGrantAll, kCanReceive)
+      ->sendTx(
+          accountGrantToAccount(
+              kAccount1, kAccount1Keypair, kAccount2, kEmptyPermissionName),
+          checkStatelessInvalid)
       .done();
 }
 
@@ -505,8 +498,9 @@ TEST_F(GrantPermissionTest, GrantAddSignatoryPermission) {
   auto check_if_signatory_is_contained = checkSignatorySet(
       kAccount2Keypair, expected_number_of_signatories, is_contained);
 
-  createTwoAccounts(concatenateVectors({kCanGrantCanAddMySignatory,
-                                        kCanGetMySignatories}), kCanReceive)
+  createTwoAccounts(
+      concatenateVectors({kCanGrantCanAddMySignatory, kCanGetMySignatories}),
+      kCanReceive)
       ->sendTx(accountGrantToAccount(kAccount1,
                                      kAccount1Keypair,
                                      kAccount2,
@@ -545,7 +539,8 @@ TEST_F(GrantPermissionTest, GrantRemoveSignatoryPermission) {
 
   createTwoAccounts(concatenateVectors({kCanGrantCanAddMySignatory,
                                         kCanGrantCanRemoveMySignatory,
-                                        kCanGetMySignatories}), kCanReceive)
+                                        kCanGetMySignatories}),
+                    kCanReceive)
       ->sendTx(accountGrantToAccount(kAccount1,
                                      kAccount1Keypair,
                                      kAccount2,
@@ -596,7 +591,8 @@ TEST_F(GrantPermissionTest, GrantSetQuorumPermission) {
 
   createTwoAccounts(concatenateVectors({kCanGrantCanSetMyQuorum,
                                         kCanGrantCanAddMySignatory,
-                                        kCanGetMyAccount}), kCanReceive)
+                                        kCanGetMyAccount}),
+                    kCanReceive)
       ->sendTx(accountGrantToAccount(kAccount1,
                                      kAccount1Keypair,
                                      kAccount2,
@@ -639,7 +635,8 @@ TEST_F(GrantPermissionTest, GrantSetAccountDetailPermission) {
       checkAccountDetail(kAccountDetailKey, kAccountDetailValue);
 
   createTwoAccounts(concatenateVectors({kCanGrantCanSetMyAccountDetail,
-                                        kCanGetMyAccountDetail}), kCanReceive)
+                                        kCanGetMyAccountDetail}),
+                    kCanReceive)
       ->sendTx(accountGrantToAccount(kAccount1,
                                      kAccount1Keypair,
                                      kAccount2,
