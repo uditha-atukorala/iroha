@@ -6,8 +6,8 @@
 #include <gtest/gtest.h>
 
 #include "acceptance_fixture.hpp"
-#include "builders/protobuf/transaction.hpp"
 #include "builders/protobuf/queries.hpp"
+#include "builders/protobuf/transaction.hpp"
 #include "framework/integration_framework/integration_test_framework.hpp"
 #include "framework/specified_visitor.hpp"
 #include "validators/permissions.hpp"
@@ -15,14 +15,9 @@
 using namespace integration_framework;
 using namespace shared_model;
 
-namespace shared_model {
-  namespace proto {
-    class QueryResponse;
-  }
-}
-
 class GrantPermissionTest : public AcceptanceFixture {
  public:
+  using TxBuilder = TestUnsignedTransactionBuilder;
 
   /**
    * Creates the transaction with the user creation commands
@@ -47,14 +42,15 @@ class GrantPermissionTest : public AcceptanceFixture {
    * @param grantPermission — any permission from the set of grantable
    * @return a Transaction object
    */
-  proto::Transaction accountGrantToAccount(const std::string &creator_account_name,
-                                           const crypto::Keypair &creator_key,
-                                           const std::string &permitee_account_name,
-                                           const std::string &grant_permission) {
+  proto::Transaction accountGrantToAccount(
+      const std::string &creator_account_name,
+      const crypto::Keypair &creator_key,
+      const std::string &permitee_account_name,
+      const std::string &grant_permission) {
     const std::string creator_account_id = creator_account_name + "@" + kDomain;
-    const std::string
-        permitee_account_id = permitee_account_name + "@" + kDomain;
-    return TestUnsignedTransactionBuilder()
+    const std::string permitee_account_id =
+        permitee_account_name + "@" + kDomain;
+    return TxBuilder()
         .creatorAccountId(creator_account_id)
         .createdTime(iroha::time::now())
         .grantPermission(permitee_account_id, grant_permission)
@@ -72,26 +68,23 @@ class GrantPermissionTest : public AcceptanceFixture {
    * @param account_name
    * @return a transaction
    */
-  proto::Transaction permiteeModifySignatory
-      (TestUnsignedTransactionBuilder (TestUnsignedTransactionBuilder::*f)(
-          const interface::types::AccountIdType &,
-          const interface::types::PubkeyType &) const,
-       const std::string &permitee_account_name,
-       const crypto::Keypair &permitee_key,
-       const std::string &account_name) {
-    const std::string
-        permitee_account_id = permitee_account_name + "@" + kDomain;
-    const std::string
-        account_id = account_name + "@" + kDomain;
-    return
-        (TestUnsignedTransactionBuilder()
-            .creatorAccountId(permitee_account_id)
-            .createdTime(iroha::time::now())
+  proto::Transaction permiteeModifySignatory(
+      TxBuilder (TxBuilder::*f)(const interface::types::AccountIdType &,
+                                const interface::types::PubkeyType &) const,
+      const std::string &permitee_account_name,
+      const crypto::Keypair &permitee_key,
+      const std::string &account_name) {
+    const std::string permitee_account_id =
+        permitee_account_name + "@" + kDomain;
+    const std::string account_id = account_name + "@" + kDomain;
+    return (TxBuilder()
+                .creatorAccountId(permitee_account_id)
+                .createdTime(iroha::time::now())
             .*f)(account_id, permitee_key.publicKey())
-            .quorum(1)
-            .build()
-            .signAndAddSignature(permitee_key)
-            .finish();
+        .quorum(1)
+        .build()
+        .signAndAddSignature(permitee_key)
+        .finish();
   }
 
   /**
@@ -106,11 +99,10 @@ class GrantPermissionTest : public AcceptanceFixture {
                                        const crypto::Keypair &permitee_key,
                                        const std::string &account_name,
                                        const int &quorum) {
-    const std::string
-        permitee_account_id = permitee_account_name + "@" + kDomain;
-    const std::string
-        account_id = account_name + "@" + kDomain;
-    return TestUnsignedTransactionBuilder()
+    const std::string permitee_account_id =
+        permitee_account_name + "@" + kDomain;
+    const std::string account_id = account_name + "@" + kDomain;
+    return TxBuilder()
         .creatorAccountId(permitee_account_id)
         .createdTime(iroha::time::now())
         .setAccountQuorum(account_id, quorum)
@@ -121,7 +113,8 @@ class GrantPermissionTest : public AcceptanceFixture {
   }
 
   /**
-   * Forms a transaction that allows permitted user to set details of the account
+   * Forms a transaction that allows permitted user to set details of the
+   * account
    * @param permitee_account_name
    * @param permitee_key
    * @param account_name
@@ -129,16 +122,16 @@ class GrantPermissionTest : public AcceptanceFixture {
    * @param detail is the data value
    * @return a transaction
    */
-  proto::Transaction permiteeSetAccountDetail(const std::string &permitee_account_name,
-                                              const crypto::Keypair &permitee_key,
-                                              const std::string &account_name,
-                                              const std::string &key,
-                                              const std::string &detail) {
-    const std::string
-        permitee_account_id = permitee_account_name + "@" + kDomain;
-    const std::string
-        account_id = account_name + "@" + kDomain;
-    return TestUnsignedTransactionBuilder()
+  proto::Transaction permiteeSetAccountDetail(
+      const std::string &permitee_account_name,
+      const crypto::Keypair &permitee_key,
+      const std::string &account_name,
+      const std::string &key,
+      const std::string &detail) {
+    const std::string permitee_account_id =
+        permitee_account_name + "@" + kDomain;
+    const std::string account_id = account_name + "@" + kDomain;
+    return TxBuilder()
         .creatorAccountId(permitee_account_id)
         .createdTime(iroha::time::now())
         .setAccountDetail(account_id, key, detail)
@@ -160,21 +153,16 @@ class GrantPermissionTest : public AcceptanceFixture {
                                          const crypto::Keypair &creator_key,
                                          const std::string &amount,
                                          const std::string &receiver_name) {
-    const std::string
-        creator_account_id = creator_name + "@" + kDomain;
-    const std::string
-        receiver_account_id = receiver_name + "@" + kDomain;
-    const std::string
-        asset_id = IntegrationTestFramework::kAssetName + "#" + kDomain;
-    return TestUnsignedTransactionBuilder()
+    const std::string creator_account_id = creator_name + "@" + kDomain;
+    const std::string receiver_account_id = receiver_name + "@" + kDomain;
+    const std::string asset_id =
+        IntegrationTestFramework::kAssetName + "#" + kDomain;
+    return TxBuilder()
         .creatorAccountId(creator_account_id)
         .createdTime(iroha::time::now())
         .addAssetQuantity(creator_account_id, asset_id, amount)
-        .transferAsset(creator_account_id,
-                       receiver_account_id,
-                       asset_id,
-                       "",
-                       amount)
+        .transferAsset(
+            creator_account_id, receiver_account_id, asset_id, "", amount)
         .quorum(1)
         .build()
         .signAndAddSignature(creator_key)
@@ -190,27 +178,22 @@ class GrantPermissionTest : public AcceptanceFixture {
    * @param receiver_name
    * @return a transaction
    */
-  proto::Transaction transferAssetFromSource(const std::string &creator_name,
-                                             const crypto::Keypair &creator_key,
-                                             const std::string &source_account_name,
-                                             const std::string &amount,
-                                             const std::string &receiver_name) {
-    const std::string
-        creator_account_id = creator_name + "@" + kDomain;
-    const std::string
-        source_account_id = source_account_name + "@" + kDomain;
-    const std::string
-        receiver_account_id = receiver_name + "@" + kDomain;
-    const std::string
-        asset_id = IntegrationTestFramework::kAssetName + "#" + kDomain;
-    return TestUnsignedTransactionBuilder()
+  proto::Transaction transferAssetFromSource(
+      const std::string &creator_name,
+      const crypto::Keypair &creator_key,
+      const std::string &source_account_name,
+      const std::string &amount,
+      const std::string &receiver_name) {
+    const std::string creator_account_id = creator_name + "@" + kDomain;
+    const std::string source_account_id = source_account_name + "@" + kDomain;
+    const std::string receiver_account_id = receiver_name + "@" + kDomain;
+    const std::string asset_id =
+        IntegrationTestFramework::kAssetName + "#" + kDomain;
+    return TxBuilder()
         .creatorAccountId(creator_account_id)
         .createdTime(iroha::time::now())
-        .transferAsset(source_account_id,
-                       receiver_account_id,
-                       asset_id,
-                       "",
-                       amount)
+        .transferAsset(
+            source_account_id, receiver_account_id, asset_id, "", amount)
         .quorum(1)
         .build()
         .signAndAddSignature(creator_key)
@@ -225,8 +208,7 @@ class GrantPermissionTest : public AcceptanceFixture {
    */
   proto::Query querySignatories(const std::string &account_name,
                                 const crypto::Keypair &account_key) {
-    const std::string
-        account_id = account_name + "@" + kDomain;
+    const std::string account_id = account_name + "@" + kDomain;
     return proto::QueryBuilder()
         .creatorAccountId(account_id)
         .createdTime(iroha::time::now())
@@ -245,8 +227,7 @@ class GrantPermissionTest : public AcceptanceFixture {
    */
   proto::Query queryAccount(const std::string &account_name,
                             const crypto::Keypair &account_key) {
-    const std::string
-        account_id = account_name + "@" + kDomain;
+    const std::string account_id = account_name + "@" + kDomain;
     return proto::QueryBuilder()
         .creatorAccountId(account_id)
         .createdTime(iroha::time::now())
@@ -265,8 +246,7 @@ class GrantPermissionTest : public AcceptanceFixture {
    */
   proto::Query queryAccountDetail(const std::string &account_name,
                                   const crypto::Keypair &account_key) {
-    const std::string
-        account_id = account_name + "@" + kDomain;
+    const std::string account_id = account_name + "@" + kDomain;
     return proto::QueryBuilder()
         .creatorAccountId(account_id)
         .createdTime(iroha::time::now())
@@ -282,41 +262,40 @@ class GrantPermissionTest : public AcceptanceFixture {
    * @param perm
    * @return
    */
-  auto concatenateVectors(std::initializer_list<std::vector<std::string>> perm) {
+  auto concatenateVectors(
+      std::initializer_list<std::vector<std::string>> perm) {
     std::vector<std::string> result;
-    std::vector<std::string> const *p = perm.begin();
-    while (p != perm.end()) {
-      result.insert(result.end(), p->begin(), p->end());
-      p++;
+    for (auto &p : perm) {
+      result.insert(result.end(), p.begin(), p.end());
     }
     return result;
   }
 
   /**
-   * Lambda method that checks query response to contain signature
+   * Creates a lambda that checks query response for signatures
    * @param signatory
    * @param quantity
    * @param is_contained
    * @return
    */
-  static std::function<void(const shared_model::proto::QueryResponse &)> checkSignatorySet(
-      const crypto::Keypair &signatory,
-      const int &quantity, const bool &is_contained) {
-    return [&signatory, &quantity, &is_contained](const shared_model::proto::QueryResponse &query_response) {
+  static std::function<void(const shared_model::proto::QueryResponse &)>
+  checkSignatorySet(const crypto::Keypair &signatory,
+                    const int &quantity,
+                    const bool &is_contained) {
+    return [&signatory, &quantity, &is_contained](
+               const shared_model::proto::QueryResponse &query_response) {
       ASSERT_NO_THROW({
-                        const auto &resp = boost::apply_visitor(
-                            framework::SpecifiedVisitor<interface::SignatoriesResponse>(),
-                            query_response.get());
+        const auto &resp = boost::apply_visitor(
+            framework::SpecifiedVisitor<interface::SignatoriesResponse>(),
+            query_response.get());
 
-                        ASSERT_EQ(resp.keys().size(), quantity);
-                        auto keys = resp.keys();
+        ASSERT_EQ(resp.keys().size(), quantity);
+        auto &keys = resp.keys();
 
-                        ASSERT_EQ(
-                            (std::find(keys.begin(),
-                                       keys.end(),
-                                       signatory.publicKey())
-                                != keys.end()), is_contained);
-                      });
+        ASSERT_EQ((std::find(keys.begin(), keys.end(), signatory.publicKey())
+                   != keys.end()),
+                  is_contained);
+      });
     };
   }
 
@@ -325,16 +304,17 @@ class GrantPermissionTest : public AcceptanceFixture {
    * @param quorum_quantity
    * @return
    */
-  static std::function<void(const shared_model::proto::QueryResponse &)> checkQuorum(
-      const int &quorum_quantity) {
-    return [&quorum_quantity](const shared_model::proto::QueryResponse &query_response) {
+  static std::function<void(const shared_model::proto::QueryResponse &)>
+  checkQuorum(const int &quorum_quantity) {
+    return [&quorum_quantity](
+               const shared_model::proto::QueryResponse &query_response) {
       ASSERT_NO_THROW({
-                        const auto &resp = boost::apply_visitor(
-                            framework::SpecifiedVisitor<interface::AccountResponse>(),
-                            query_response.get());
+        const auto &resp = boost::apply_visitor(
+            framework::SpecifiedVisitor<interface::AccountResponse>(),
+            query_response.get());
 
-                        ASSERT_EQ(resp.account().quorum(), quorum_quantity);
-                      });
+        ASSERT_EQ(resp.account().quorum(), quorum_quantity);
+      });
     };
   }
 
@@ -344,18 +324,17 @@ class GrantPermissionTest : public AcceptanceFixture {
    * @param detail
    * @return
    */
-  static std::function<void(const shared_model::proto::QueryResponse &)> checkAccountDetail(
-      const std::string &key, const std::string &detail) {
-    return [&key, &detail](const shared_model::proto::QueryResponse &query_response) {
+  static std::function<void(const shared_model::proto::QueryResponse &)>
+  checkAccountDetail(const std::string &key, const std::string &detail) {
+    return [&key,
+            &detail](const shared_model::proto::QueryResponse &query_response) {
       ASSERT_NO_THROW({
-                        const auto &resp = boost::apply_visitor(
-                            framework::SpecifiedVisitor<interface::AccountDetailResponse>(),
-                            query_response.get());
-                        ASSERT_TRUE(
-                            resp.detail().find(key) != std::string::npos);
-                        ASSERT_TRUE(
-                            resp.detail().find(detail) != std::string::npos);
-                      });
+        const auto &resp = boost::apply_visitor(
+            framework::SpecifiedVisitor<interface::AccountDetailResponse>(),
+            query_response.get());
+        ASSERT_TRUE(resp.detail().find(key) != std::string::npos);
+        ASSERT_TRUE(resp.detail().find(detail) != std::string::npos);
+      });
     };
   }
 
@@ -377,53 +356,39 @@ class GrantPermissionTest : public AcceptanceFixture {
   const std::string kAccountDetailValue = "some_value";
 
   const std::vector<std::string> kCanGetMySignatories{
-      permissions::can_get_my_signatories
-  };
+      permissions::can_get_my_signatories};
 
   const std::vector<std::string> kCanGetMyAccount{
-      permissions::can_get_my_account
-  };
+      permissions::can_get_my_account};
 
   const std::vector<std::string> kCanGetMyAccountDetail{
-      permissions::can_get_my_acc_detail
-  };
+      permissions::can_get_my_acc_detail};
 
-  const std::vector<std::string> kCanTransfer{
-      permissions::can_transfer
-  };
+  const std::vector<std::string> kCanTransfer{permissions::can_transfer};
 
-  const std::vector<std::string> kCanReceive{
-      permissions::can_receive
-  };
+  const std::vector<std::string> kCanReceive{permissions::can_receive};
 
   const std::vector<std::string> kCanGrantCanAddMySignatory{
-      permissions::can_grant + permissions::can_add_my_signatory
-  };
+      permissions::can_grant + permissions::can_add_my_signatory};
 
   const std::vector<std::string> kCanGrantCanRemoveMySignatory{
-      permissions::can_grant + permissions::can_remove_my_signatory
-  };
+      permissions::can_grant + permissions::can_remove_my_signatory};
 
   const std::vector<std::string> kCanGrantCanSetMyQuorum{
-      permissions::can_grant + permissions::can_set_my_quorum
-  };
+      permissions::can_grant + permissions::can_set_my_quorum};
 
   const std::vector<std::string> kCanGrantCanSetMyAccountDetail{
-      permissions::can_grant + permissions::can_set_my_account_detail
-  };
+      permissions::can_grant + permissions::can_set_my_account_detail};
 
   const std::vector<std::string> kCanTransferMyAssets{
-      permissions::can_grant + permissions::can_transfer_my_assets
-  };
+      permissions::can_grant + permissions::can_transfer_my_assets};
 
   const std::vector<std::string> kCanGrantAll{
       permissions::can_grant + permissions::can_add_my_signatory,
       permissions::can_grant + permissions::can_remove_my_signatory,
       permissions::can_grant + permissions::can_set_my_quorum,
       permissions::can_grant + permissions::can_set_my_account_detail,
-      permissions::can_grant + permissions::can_transfer_my_assets
-  };
-
+      permissions::can_grant + permissions::can_transfer_my_assets};
 };
 
 /**
@@ -436,13 +401,13 @@ class GrantPermissionTest : public AcceptanceFixture {
 TEST_F(GrantPermissionTest, GrantToInexistingAccount) {
   IntegrationTestFramework(1)
       .setInitialState(kAdminKeypair)
-      .sendTx(makeAccountWithPerms(kAccount1,
-                                   kAccount1Keypair,
-                                   kCanGrantAll,
-                                   kRole1))
+      .sendTx(makeAccountWithPerms(
+          kAccount1, kAccount1Keypair, kCanGrantAll, kRole1))
       .skipProposal()
       .skipBlock()
-      .sendTx(accountGrantToAccount(kAccount1, kAccount1Keypair, kAccount2,
+      .sendTx(accountGrantToAccount(kAccount1,
+                                    kAccount1Keypair,
+                                    kAccount2,
                                     permissions::can_add_my_signatory))
       .skipProposal()
       .checkBlock(
@@ -461,22 +426,16 @@ TEST_F(GrantPermissionTest, GrantToInexistingAccount) {
 TEST_F(GrantPermissionTest, GrantEmptyPermission) {
   IntegrationTestFramework(1)
       .setInitialState(kAdminKeypair)
-      .sendTx(makeAccountWithPerms(kAccount1,
-                                   kAccount1Keypair,
-                                   kCanGrantAll,
-                                   kRole1))
+      .sendTx(makeAccountWithPerms(
+          kAccount1, kAccount1Keypair, kCanGrantAll, kRole1))
       .skipProposal()
       .skipBlock()
-      .sendTx(makeAccountWithPerms(kAccount2,
-                                   kAccount2Keypair,
-                                   kCanReceive,
-                                   kRole2))
+      .sendTx(makeAccountWithPerms(
+          kAccount2, kAccount2Keypair, kCanReceive, kRole2))
       .skipProposal()
       .skipBlock()
-      .sendTx(accountGrantToAccount(kAccount1,
-                                    kAccount1Keypair,
-                                    kAccount2,
-                                    kEmptyPermissionName),
+      .sendTx(accountGrantToAccount(
+                  kAccount1, kAccount1Keypair, kAccount2, kEmptyPermissionName),
               checkStatelessInvalid)
       .done();
 }
@@ -492,16 +451,12 @@ TEST_F(GrantPermissionTest, GrantEmptyPermission) {
 TEST_F(GrantPermissionTest, GrantNonexistentPermission) {
   IntegrationTestFramework(1)
       .setInitialState(kAdminKeypair)
-      .sendTx(makeAccountWithPerms(kAccount1,
-                                   kAccount1Keypair,
-                                   kCanGrantAll,
-                                   kRole1))
+      .sendTx(makeAccountWithPerms(
+          kAccount1, kAccount1Keypair, kCanGrantAll, kRole1))
       .skipProposal()
       .skipBlock()
-      .sendTx(makeAccountWithPerms(kAccount2,
-                                   kAccount2Keypair,
-                                   kCanReceive,
-                                   kRole2))
+      .sendTx(makeAccountWithPerms(
+          kAccount2, kAccount2Keypair, kCanReceive, kRole2))
       .skipProposal()
       .skipBlock()
       .sendTx(accountGrantToAccount(kAccount1,
@@ -523,19 +478,17 @@ TEST_F(GrantPermissionTest, GrantNonexistentPermission) {
 TEST_F(GrantPermissionTest, GrantNotGrantablePermission) {
   IntegrationTestFramework(1)
       .setInitialState(kAdminKeypair)
-      .sendTx(makeAccountWithPerms(kAccount1,
-                                   kAccount1Keypair,
-                                   kCanGrantAll,
-                                   kRole1))
+      .sendTx(makeAccountWithPerms(
+          kAccount1, kAccount1Keypair, kCanGrantAll, kRole1))
       .skipProposal()
       .skipBlock()
-      .sendTx(makeAccountWithPerms(kAccount2,
-                                   kAccount2Keypair,
-                                   kCanReceive,
-                                   kRole2))
+      .sendTx(makeAccountWithPerms(
+          kAccount2, kAccount2Keypair, kCanReceive, kRole2))
       .skipProposal()
       .skipBlock()
-      .sendTx(accountGrantToAccount(kAccount1, kAccount1Keypair, kAccount2,
+      .sendTx(accountGrantToAccount(kAccount1,
+                                    kAccount1Keypair,
+                                    kAccount2,
                                     permissions::can_create_domain),
               checkStatelessInvalid)
       .done();
@@ -550,42 +503,41 @@ TEST_F(GrantPermissionTest, GrantNotGrantablePermission) {
  * AND there is a signatory added by the permitee
  */
 TEST_F(GrantPermissionTest, GrantAddSignatoryPermission) {
-
   auto expected_number_of_signatories = 2;
   auto is_contained = true;
-  auto check_if_signatory_is_contained =
-      checkSignatorySet(kAccount2Keypair,
-                        expected_number_of_signatories,
-                        is_contained);
+  auto check_if_signatory_is_contained = checkSignatorySet(
+      kAccount2Keypair, expected_number_of_signatories, is_contained);
 
   IntegrationTestFramework(1)
       .setInitialState(kAdminKeypair)
-          // Create account with rights to grant and read his/her signatories
-      .sendTx(makeAccountWithPerms(kAccount1,
-                                   kAccount1Keypair,
-                                   concatenateVectors({kCanGrantCanAddMySignatory,
-                                                       kCanGetMySignatories}),
-                                   kRole1))
+      // Create account with rights to grant and read his/her signatories
+      .sendTx(
+          makeAccountWithPerms(kAccount1,
+                               kAccount1Keypair,
+                               concatenateVectors({kCanGrantCanAddMySignatory,
+                                                   kCanGetMySignatories}),
+                               kRole1))
       .skipProposal()
       .skipBlock()
-          // Create account with rights to transfer and receive assets
-      .sendTx(makeAccountWithPerms(kAccount2,
-                                   kAccount2Keypair,
-                                   kCanReceive,
-                                   kRole2))
+      // Create account with rights to transfer and receive assets
+      .sendTx(makeAccountWithPerms(
+          kAccount2, kAccount2Keypair, kCanReceive, kRole2))
       .skipProposal()
       .skipBlock()
-          // Grant permissions to add signatories
-      .sendTx(accountGrantToAccount(kAccount1, kAccount1Keypair, kAccount2,
+      // Grant permissions to add signatories
+      .sendTx(accountGrantToAccount(kAccount1,
+                                    kAccount1Keypair,
+                                    kAccount2,
                                     permissions::can_add_my_signatory))
       .skipProposal()
       .checkBlock(
           [](auto &block) { ASSERT_EQ(block->transactions().size(), 1); })
-          // Add signatory
-      .sendTx(permiteeModifySignatory(&TestUnsignedTransactionBuilder::addSignatory,
-                                      kAccount2,
-                                      kAccount2Keypair,
-                                      kAccount1))
+      // Add signatory
+      .sendTx(
+          permiteeModifySignatory(&TestUnsignedTransactionBuilder::addSignatory,
+                                  kAccount2,
+                                  kAccount2Keypair,
+                                  kAccount1))
       .checkBlock(
           [](auto &block) { ASSERT_EQ(block->transactions().size(), 1); })
       .sendQuery(querySignatories(kAccount1, kAccount1Keypair),
@@ -600,56 +552,58 @@ TEST_F(GrantPermissionTest, GrantAddSignatoryPermission) {
  * AND the permittee has added his/her signatory to the account
  * AND the account revoked add signatory from the permittee
  * @when the permittee removes signatory from the account
- * @then a block with transaction to remove signatory from the account is written
- * AND there is no signatory added by the permitee
+ * @then a block with transaction to remove signatory from the account is
+ * written AND there is no signatory added by the permitee
  */
 TEST_F(GrantPermissionTest, GrantRemoveSignatoryPermission) {
-
   auto expected_number_of_signatories = 1;
   auto is_contained = false;
-  auto check_if_signatory_is_not_contained =
-      checkSignatorySet(kAccount2Keypair,
-                        expected_number_of_signatories,
-                        is_contained);
+  auto check_if_signatory_is_not_contained = checkSignatorySet(
+      kAccount2Keypair, expected_number_of_signatories, is_contained);
 
   IntegrationTestFramework(1)
       .setInitialState(kAdminKeypair)
-          // Create account with rights to grant and read his/her signatories
-      .sendTx(makeAccountWithPerms(kAccount1,
-                                   kAccount1Keypair,
-                                   concatenateVectors({kCanGrantCanAddMySignatory,
-                                                       kCanGrantCanRemoveMySignatory,
-                                                       kCanGetMySignatories}),
-                                   kRole1))
+      // Create account with rights to grant and read his/her signatories
+      .sendTx(makeAccountWithPerms(
+          kAccount1,
+          kAccount1Keypair,
+          concatenateVectors({kCanGrantCanAddMySignatory,
+                              kCanGrantCanRemoveMySignatory,
+                              kCanGetMySignatories}),
+          kRole1))
       .skipProposal()
       .skipBlock()
-          // Create account with rights to transfer and receive assets
-      .sendTx(makeAccountWithPerms(kAccount2,
-                                   kAccount2Keypair,
-                                   kCanReceive,
-                                   kRole2))
+      // Create account with rights to transfer and receive assets
+      .sendTx(makeAccountWithPerms(
+          kAccount2, kAccount2Keypair, kCanReceive, kRole2))
       .skipProposal()
       .skipBlock()
-      .sendTx(accountGrantToAccount(kAccount1, kAccount1Keypair, kAccount2,
+      .sendTx(accountGrantToAccount(kAccount1,
+                                    kAccount1Keypair,
+                                    kAccount2,
                                     permissions::can_add_my_signatory))
       .skipProposal()
       .skipBlock()
-      .sendTx(accountGrantToAccount(kAccount1, kAccount1Keypair, kAccount2,
+      .sendTx(accountGrantToAccount(kAccount1,
+                                    kAccount1Keypair,
+                                    kAccount2,
                                     permissions::can_remove_my_signatory))
       .skipProposal()
       .checkBlock(
           [](auto &block) { ASSERT_EQ(block->transactions().size(), 1); })
-      .sendTx(permiteeModifySignatory(&TestUnsignedTransactionBuilder::addSignatory,
-                                      kAccount2,
-                                      kAccount2Keypair,
-                                      kAccount1))
+      .sendTx(
+          permiteeModifySignatory(&TestUnsignedTransactionBuilder::addSignatory,
+                                  kAccount2,
+                                  kAccount2Keypair,
+                                  kAccount1))
       .skipProposal()
       .checkBlock(
           [](auto &block) { ASSERT_EQ(block->transactions().size(), 1); })
-      .sendTx(permiteeModifySignatory(&TestUnsignedTransactionBuilder::removeSignatory,
-                                      kAccount2,
-                                      kAccount2Keypair,
-                                      kAccount1))
+      .sendTx(permiteeModifySignatory(
+          &TestUnsignedTransactionBuilder::removeSignatory,
+          kAccount2,
+          kAccount2Keypair,
+          kAccount1))
       .skipProposal()
       .checkBlock(
           [](auto &block) { ASSERT_EQ(block->transactions().size(), 1); })
@@ -669,44 +623,44 @@ TEST_F(GrantPermissionTest, GrantRemoveSignatoryPermission) {
  * AND the quorum number of account equals to the number, set by permitee
  */
 TEST_F(GrantPermissionTest, GrantSetQuorumPermission) {
-
   auto quorum_quantity = 2;
-  auto check_quorum_quantity =
-      checkQuorum(quorum_quantity);
+  auto check_quorum_quantity = checkQuorum(quorum_quantity);
 
   IntegrationTestFramework(1)
       .setInitialState(kAdminKeypair)
-      .sendTx(makeAccountWithPerms(kAccount1,
-                                   kAccount1Keypair,
-                                   concatenateVectors({kCanGrantCanSetMyQuorum,
-                                                       kCanGrantCanAddMySignatory,
-                                                       kCanGetMyAccount}),
-                                   kRole1))
+      .sendTx(
+          makeAccountWithPerms(kAccount1,
+                               kAccount1Keypair,
+                               concatenateVectors({kCanGrantCanSetMyQuorum,
+                                                   kCanGrantCanAddMySignatory,
+                                                   kCanGetMyAccount}),
+                               kRole1))
       .skipProposal()
       .skipBlock()
-      .sendTx(makeAccountWithPerms(kAccount2,
-                                   kAccount2Keypair,
-                                   kCanReceive,
-                                   kRole2))
+      .sendTx(makeAccountWithPerms(
+          kAccount2, kAccount2Keypair, kCanReceive, kRole2))
       .skipProposal()
       .skipBlock()
-      .sendTx(accountGrantToAccount(kAccount1, kAccount1Keypair, kAccount2,
+      .sendTx(accountGrantToAccount(kAccount1,
+                                    kAccount1Keypair,
+                                    kAccount2,
                                     permissions::can_set_my_quorum))
       .skipProposal()
       .skipBlock()
-      .sendTx(accountGrantToAccount(kAccount1, kAccount1Keypair, kAccount2,
+      .sendTx(accountGrantToAccount(kAccount1,
+                                    kAccount1Keypair,
+                                    kAccount2,
                                     permissions::can_add_my_signatory))
       .skipProposal()
       .skipBlock()
-      .sendTx(permiteeModifySignatory(&TestUnsignedTransactionBuilder::addSignatory,
-                                      kAccount2,
-                                      kAccount2Keypair,
-                                      kAccount1))
+      .sendTx(
+          permiteeModifySignatory(&TestUnsignedTransactionBuilder::addSignatory,
+                                  kAccount2,
+                                  kAccount2Keypair,
+                                  kAccount1))
       .skipProposal()
       .skipBlock()
-      .sendTx(permiteeSetQuorum(kAccount2,
-                                kAccount2Keypair,
-                                kAccount1, 2))
+      .sendTx(permiteeSetQuorum(kAccount2, kAccount2Keypair, kAccount1, 2))
       .skipProposal()
       .checkBlock(
           [](auto &block) { ASSERT_EQ(block->transactions().size(), 1); })
@@ -725,26 +679,26 @@ TEST_F(GrantPermissionTest, GrantSetQuorumPermission) {
  * AND the account is able to read the data
  */
 TEST_F(GrantPermissionTest, GrantSetAccountDetailPermission) {
-
   auto check_account_detail =
       checkAccountDetail(kAccountDetailKey, kAccountDetailValue);
 
   IntegrationTestFramework(1)
       .setInitialState(kAdminKeypair)
-      .sendTx(makeAccountWithPerms(kAccount1,
-                                   kAccount1Keypair,
-                                   concatenateVectors({kCanGrantCanSetMyAccountDetail,
-                                                       kCanGetMyAccountDetail}),
-                                   kRole1))
+      .sendTx(makeAccountWithPerms(
+          kAccount1,
+          kAccount1Keypair,
+          concatenateVectors(
+              {kCanGrantCanSetMyAccountDetail, kCanGetMyAccountDetail}),
+          kRole1))
       .skipProposal()
       .skipBlock()
-      .sendTx(makeAccountWithPerms(kAccount2,
-                                   kAccount2Keypair,
-                                   kCanReceive,
-                                   kRole2))
+      .sendTx(makeAccountWithPerms(
+          kAccount2, kAccount2Keypair, kCanReceive, kRole2))
       .skipProposal()
       .skipBlock()
-      .sendTx(accountGrantToAccount(kAccount1, kAccount1Keypair, kAccount2,
+      .sendTx(accountGrantToAccount(kAccount1,
+                                    kAccount1Keypair,
+                                    kAccount2,
                                     permissions::can_set_my_account_detail))
       .skipProposal()
       .checkBlock(
@@ -773,27 +727,28 @@ TEST_F(GrantPermissionTest, GrantSetAccountDetailPermission) {
  * @then a block with transaction to grant right is written
  * AND the transfer is made
  */
-TEST_F(GrantPermissionTest, DISABLED_GrantTransferPermission) {
-
-  auto amount_of_asset = "1000";
+TEST_F(GrantPermissionTest, GrantTransferPermission) {
+  auto amount_of_asset = "1000.00";
 
   IntegrationTestFramework(1)
       .setInitialState(kAdminKeypair)
-      .sendTx(makeAccountWithPerms(kAccount1,
-                                   kAccount1Keypair,
-                                   concatenateVectors({kCanTransferMyAssets,
-                                                       kCanReceive}),
-                                   kRole1))
+      .sendTx(makeAccountWithPerms(
+          kAccount1,
+          kAccount1Keypair,
+          concatenateVectors({kCanTransferMyAssets, kCanReceive}),
+          kRole1))
       .skipProposal()
       .skipBlock()
-      .sendTx(makeAccountWithPerms(kAccount2,
-                                   kAccount2Keypair,
-                                   concatenateVectors({kCanTransfer,
-                                                       kCanReceive}),
-                                   kRole2))
+      .sendTx(
+          makeAccountWithPerms(kAccount2,
+                               kAccount2Keypair,
+                               concatenateVectors({kCanTransfer, kCanReceive}),
+                               kRole2))
       .skipProposal()
       .skipBlock()
-      .sendTx(accountGrantToAccount(kAccount1, kAccount1Keypair, kAccount2,
+      .sendTx(accountGrantToAccount(kAccount1,
+                                    kAccount1Keypair,
+                                    kAccount2,
                                     permissions::can_transfer_my_assets))
       .skipProposal()
       .checkBlock(
@@ -805,11 +760,8 @@ TEST_F(GrantPermissionTest, DISABLED_GrantTransferPermission) {
       .skipProposal()
       .checkBlock(
           [](auto &block) { ASSERT_EQ(block->transactions().size(), 1); })
-      .sendTx(transferAssetFromSource(kAccount2,
-                                      kAccount2Keypair,
-                                      kAccount1,
-                                      amount_of_asset,
-                                      kAccount2))
+      .sendTx(transferAssetFromSource(
+          kAccount2, kAccount2Keypair, kAccount1, amount_of_asset, kAccount2))
       .skipProposal()
       .checkBlock(
           [](auto &block) { ASSERT_EQ(block->transactions().size(), 1); })
@@ -826,19 +778,17 @@ TEST_F(GrantPermissionTest, DISABLED_GrantTransferPermission) {
 TEST_F(GrantPermissionTest, GrantWithoutGrantPermissions) {
   IntegrationTestFramework(1)
       .setInitialState(kAdminKeypair)
-      .sendTx(makeAccountWithPerms(kAccount1,
-                                   kAccount1Keypair,
-                                   kCanReceive,
-                                   kRole1))
+      .sendTx(makeAccountWithPerms(
+          kAccount1, kAccount1Keypair, kCanReceive, kRole1))
       .skipProposal()
       .skipBlock()
-      .sendTx(makeAccountWithPerms(kAccount2,
-                                   kAccount2Keypair,
-                                   kCanReceive,
-                                   kRole2))
+      .sendTx(makeAccountWithPerms(
+          kAccount2, kAccount2Keypair, kCanReceive, kRole2))
       .skipProposal()
       .skipBlock()
-      .sendTx(accountGrantToAccount(kAccount1, kAccount1Keypair, kAccount2,
+      .sendTx(accountGrantToAccount(kAccount1,
+                                    kAccount1Keypair,
+                                    kAccount2,
                                     permissions::can_add_my_signatory))
       .skipProposal()
       .checkBlock(
@@ -858,27 +808,26 @@ TEST_F(GrantPermissionTest, GrantWithoutGrantPermissions) {
 TEST_F(GrantPermissionTest, GrantMoreThanOnce) {
   IntegrationTestFramework(1)
       .setInitialState(kAdminKeypair)
-      .sendTx(makeAccountWithPerms(kAccount1,
-                                   kAccount1Keypair,
-                                   kCanGrantAll,
-                                   kRole1))
+      .sendTx(makeAccountWithPerms(
+          kAccount1, kAccount1Keypair, kCanGrantAll, kRole1))
       .skipProposal()
       .skipBlock()
-      .sendTx(makeAccountWithPerms(kAccount2,
-                                   kAccount2Keypair,
-                                   kCanReceive,
-                                   kRole2))
+      .sendTx(makeAccountWithPerms(
+          kAccount2, kAccount2Keypair, kCanReceive, kRole2))
       .skipProposal()
       .skipBlock()
-      .sendTx(accountGrantToAccount(kAccount1, kAccount1Keypair, kAccount2,
+      .sendTx(accountGrantToAccount(kAccount1,
+                                    kAccount1Keypair,
+                                    kAccount2,
                                     permissions::can_add_my_signatory))
       .skipProposal()
       .skipBlock()
-      .sendTx(accountGrantToAccount(kAccount1, kAccount1Keypair, kAccount2,
+      .sendTx(accountGrantToAccount(kAccount1,
+                                    kAccount1Keypair,
+                                    kAccount2,
                                     permissions::can_add_my_signatory))
       .skipProposal()
       .checkBlock(
           [](auto &block) { ASSERT_EQ(block->transactions().size(), 0); })
       .done();
 }
-
