@@ -30,7 +30,7 @@ namespace iroha {
        * @param id - reference key
        * @param blob - data associated with key
        */
-      virtual bool add(Identifier id, const std::vector<uint8_t> &blob) = 0;
+      virtual bool add(Identifier id, const Bytes &blob) = 0;
 
       /**
        * Get data associated with
