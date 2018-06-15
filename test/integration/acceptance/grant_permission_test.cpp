@@ -372,9 +372,6 @@ class GrantPermissionTest : public AcceptanceFixture {
   const crypto::Keypair kAccount2Keypair =
       crypto::DefaultCryptoAlgorithmType::generateKeypair();
 
-  const std::string kEmptyPermissionName = "";
-  const std::string kNonexistentPermissionName = "nonexistent_permission";
-
   const std::string kAccountDetailKey = "some_key";
   const std::string kAccountDetailValue = "some_value";
 
@@ -437,7 +434,7 @@ TEST_F(GrantPermissionTest, GrantToInexistingAccount) {
 }
 
 /**
- * C260 Grant add signatory permission
+ * C257 Grant add signatory permission
  * @given an account with rights to grant rights to other accounts
  * AND the account grants add signatory rights to an existing account (permitee)
  * @when the permitee adds signatory to the account
@@ -474,7 +471,7 @@ TEST_F(GrantPermissionTest, GrantAddSignatoryPermission) {
 }
 
 /**
- * C261 Grant remove signatory permission
+ * C258 Grant remove signatory permission
  * @given an account with rights to grant rights to other accounts
  * AND the account grants add and remove signatory rights to an existing account
  * AND the permittee has added his/her signatory to the account
@@ -528,7 +525,7 @@ TEST_F(GrantPermissionTest, GrantRemoveSignatoryPermission) {
 }
 
 /**
- * C262 Grant set quorum permission
+ * C259 Grant set quorum permission
  * @given an account with rights to grant rights to other accounts
  * AND the account grants add signatory rights
  * AND set quorum rights to an existing account
@@ -574,7 +571,7 @@ TEST_F(GrantPermissionTest, GrantSetQuorumPermission) {
 }
 
 /**
- * C263 Grant set account detail permission
+ * C260 Grant set account detail permission
  * @given an account with rights to grant rights to other accounts
  * AND the account grants set account detail permission to a permitee
  * @when the permittee sets account detail to the account
@@ -611,7 +608,7 @@ TEST_F(GrantPermissionTest, GrantSetAccountDetailPermission) {
 }
 
 /**
- * C264 Grant transfer permission
+ * C261 Grant transfer permission
  * @given an account with rights to grant transfer of his/her assets
  * AND the account can receive assets
  * AND the account has some amount of assets
@@ -649,7 +646,7 @@ TEST_F(GrantPermissionTest, DISABLED_GrantTransferPermission) {
 }
 
 /**
- * C265 GrantPermission without such permissions
+ * C262 GrantPermission without such permissions
  * @given an account !without! rights to grant rights to other accounts
  * @when the account grants rights to an existing account
  * @then this transaction is statefully invalid
@@ -668,7 +665,7 @@ TEST_F(GrantPermissionTest, GrantWithoutGrantPermissions) {
 }
 
 /**
- * C266 GrantPermission more than once
+ * C263 GrantPermission more than once
  * @given an account with rights to grant rights to other accounts
  * AND an account that have already granted a permission to a permittee
  * @when the account grants the same permission to the same permittee
