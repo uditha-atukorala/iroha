@@ -39,7 +39,7 @@ boost::optional<std::unique_ptr<FlatFile>> FlatFile::create(
   return std::make_unique<FlatFile>(*res, path, private_tag{});
 }
 
-bool FlatFile::add(Identifier id, const std::vector<uint8_t> &block) {
+bool FlatFile::add(Identifier id, const Bytes &block) {
   // TODO(x3medima17): Change bool to generic Result return type
 
   if (id != current_id_ + 1) {

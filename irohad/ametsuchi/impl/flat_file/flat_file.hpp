@@ -53,7 +53,7 @@ namespace iroha {
       static boost::optional<std::unique_ptr<FlatFile>> create(
           const std::string &path);
 
-      bool add(Identifier id, const std::vector<uint8_t> &blob) override;
+      bool add(Identifier id, const Bytes &blob) override;
 
       boost::optional<Bytes> get(Identifier id) const override;
 
