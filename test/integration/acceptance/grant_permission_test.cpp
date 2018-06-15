@@ -34,6 +34,26 @@ class GrantPermissionTest : public AcceptanceFixture {
         .finish();
   }
 
+  IntegrationTestFramework &createTwoAccounts(const std::vector<std::string> &perm1,
+                                              const std::vector<std::string> &perm2) {
+    return IntegrationTestFramework(1)
+        .setInitialState(kAdminKeypair)
+        .sendTx(makeAccountWithPerms(
+            kAccount1,
+            kAccount1Keypair,
+            perm1,
+            kRole1))
+        .skipProposal()
+        .skipBlock()
+        .sendTx(
+            makeAccountWithPerms(kAccount2,
+                                 kAccount2Keypair,
+                                 perm2,
+                                 kRole2))
+        .skipProposal()
+        .skipBlock();
+  }
+
   /**
    * Forms a transaction such that creator of transaction
    * grants permittee a permission
@@ -78,9 +98,9 @@ class GrantPermissionTest : public AcceptanceFixture {
         permitee_account_name + "@" + kDomain;
     const std::string account_id = account_name + "@" + kDomain;
     return (TxBuilder()
-                .creatorAccountId(permitee_account_id)
-                .createdTime(iroha::time::now())
-            .*f)(account_id, permitee_key.publicKey())
+        .creatorAccountId(permitee_account_id)
+        .createdTime(iroha::time::now())
+        .*f)(account_id, permitee_key.publicKey())
         .quorum(1)
         .build()
         .signAndAddSignature(permitee_key)
@@ -283,19 +303,21 @@ class GrantPermissionTest : public AcceptanceFixture {
                     const int &quantity,
                     const bool &is_contained) {
     return [&signatory, &quantity, &is_contained](
-               const shared_model::proto::QueryResponse &query_response) {
+        const shared_model::proto::QueryResponse &query_response) {
       ASSERT_NO_THROW({
-        const auto &resp = boost::apply_visitor(
-            framework::SpecifiedVisitor<interface::SignatoriesResponse>(),
-            query_response.get());
+                        const auto &resp = boost::apply_visitor(
+                            framework::SpecifiedVisitor<interface::SignatoriesResponse>(),
+                            query_response.get());
 
-        ASSERT_EQ(resp.keys().size(), quantity);
-        auto &keys = resp.keys();
+                        ASSERT_EQ(resp.keys().size(), quantity);
+                        auto &keys = resp.keys();
 
-        ASSERT_EQ((std::find(keys.begin(), keys.end(), signatory.publicKey())
-                   != keys.end()),
-                  is_contained);
-      });
+                        ASSERT_EQ((std::find(keys.begin(),
+                                             keys.end(),
+                                             signatory.publicKey())
+                                      != keys.end()),
+                                  is_contained);
+                      });
     };
   }
 
@@ -307,14 +329,14 @@ class GrantPermissionTest : public AcceptanceFixture {
   static std::function<void(const shared_model::proto::QueryResponse &)>
   checkQuorum(const int &quorum_quantity) {
     return [&quorum_quantity](
-               const shared_model::proto::QueryResponse &query_response) {
+        const shared_model::proto::QueryResponse &query_response) {
       ASSERT_NO_THROW({
-        const auto &resp = boost::apply_visitor(
-            framework::SpecifiedVisitor<interface::AccountResponse>(),
-            query_response.get());
+                        const auto &resp = boost::apply_visitor(
+                            framework::SpecifiedVisitor<interface::AccountResponse>(),
+                            query_response.get());
 
-        ASSERT_EQ(resp.account().quorum(), quorum_quantity);
-      });
+                        ASSERT_EQ(resp.account().quorum(), quorum_quantity);
+                      });
     };
   }
 
@@ -327,14 +349,16 @@ class GrantPermissionTest : public AcceptanceFixture {
   static std::function<void(const shared_model::proto::QueryResponse &)>
   checkAccountDetail(const std::string &key, const std::string &detail) {
     return [&key,
-            &detail](const shared_model::proto::QueryResponse &query_response) {
+        &detail](const shared_model::proto::QueryResponse &query_response) {
       ASSERT_NO_THROW({
-        const auto &resp = boost::apply_visitor(
-            framework::SpecifiedVisitor<interface::AccountDetailResponse>(),
-            query_response.get());
-        ASSERT_TRUE(resp.detail().find(key) != std::string::npos);
-        ASSERT_TRUE(resp.detail().find(detail) != std::string::npos);
-      });
+                        const auto &resp = boost::apply_visitor(
+                            framework::SpecifiedVisitor<interface::AccountDetailResponse>(),
+                            query_response.get());
+                        ASSERT_TRUE(
+                            resp.detail().find(key) != std::string::npos);
+                        ASSERT_TRUE(
+                            resp.detail().find(detail) != std::string::npos);
+                      });
     };
   }
 
@@ -424,18 +448,9 @@ TEST_F(GrantPermissionTest, GrantToInexistingAccount) {
  * AND it is not written in the block
  */
 TEST_F(GrantPermissionTest, GrantEmptyPermission) {
-  IntegrationTestFramework(1)
-      .setInitialState(kAdminKeypair)
-      .sendTx(makeAccountWithPerms(
-          kAccount1, kAccount1Keypair, kCanGrantAll, kRole1))
-      .skipProposal()
-      .skipBlock()
-      .sendTx(makeAccountWithPerms(
-          kAccount2, kAccount2Keypair, kCanReceive, kRole2))
-      .skipProposal()
-      .skipBlock()
+  createTwoAccounts(kCanGrantAll, kCanReceive)
       .sendTx(accountGrantToAccount(
-                  kAccount1, kAccount1Keypair, kAccount2, kEmptyPermissionName),
+          kAccount1, kAccount1Keypair, kAccount2, kEmptyPermissionName),
               checkStatelessInvalid)
       .done();
 }
@@ -449,16 +464,7 @@ TEST_F(GrantPermissionTest, GrantEmptyPermission) {
  * AND it is not written in the block
  */
 TEST_F(GrantPermissionTest, GrantNonexistentPermission) {
-  IntegrationTestFramework(1)
-      .setInitialState(kAdminKeypair)
-      .sendTx(makeAccountWithPerms(
-          kAccount1, kAccount1Keypair, kCanGrantAll, kRole1))
-      .skipProposal()
-      .skipBlock()
-      .sendTx(makeAccountWithPerms(
-          kAccount2, kAccount2Keypair, kCanReceive, kRole2))
-      .skipProposal()
-      .skipBlock()
+  createTwoAccounts(kCanGrantAll, kCanReceive)
       .sendTx(accountGrantToAccount(kAccount1,
                                     kAccount1Keypair,
                                     kAccount2,
@@ -476,16 +482,7 @@ TEST_F(GrantPermissionTest, GrantNonexistentPermission) {
  * AND it is not written in the block
  */
 TEST_F(GrantPermissionTest, GrantNotGrantablePermission) {
-  IntegrationTestFramework(1)
-      .setInitialState(kAdminKeypair)
-      .sendTx(makeAccountWithPerms(
-          kAccount1, kAccount1Keypair, kCanGrantAll, kRole1))
-      .skipProposal()
-      .skipBlock()
-      .sendTx(makeAccountWithPerms(
-          kAccount2, kAccount2Keypair, kCanReceive, kRole2))
-      .skipProposal()
-      .skipBlock()
+  createTwoAccounts(kCanGrantAll, kCanReceive)
       .sendTx(accountGrantToAccount(kAccount1,
                                     kAccount1Keypair,
                                     kAccount2,
@@ -508,23 +505,8 @@ TEST_F(GrantPermissionTest, GrantAddSignatoryPermission) {
   auto check_if_signatory_is_contained = checkSignatorySet(
       kAccount2Keypair, expected_number_of_signatories, is_contained);
 
-  IntegrationTestFramework(1)
-      .setInitialState(kAdminKeypair)
-      // Create account with rights to grant and read his/her signatories
-      .sendTx(
-          makeAccountWithPerms(kAccount1,
-                               kAccount1Keypair,
-                               concatenateVectors({kCanGrantCanAddMySignatory,
-                                                   kCanGetMySignatories}),
-                               kRole1))
-      .skipProposal()
-      .skipBlock()
-      // Create account with rights to transfer and receive assets
-      .sendTx(makeAccountWithPerms(
-          kAccount2, kAccount2Keypair, kCanReceive, kRole2))
-      .skipProposal()
-      .skipBlock()
-      // Grant permissions to add signatories
+  createTwoAccounts(concatenateVectors({kCanGrantCanAddMySignatory,
+                                        kCanGetMySignatories}), kCanReceive)
       .sendTx(accountGrantToAccount(kAccount1,
                                     kAccount1Keypair,
                                     kAccount2,
@@ -532,7 +514,7 @@ TEST_F(GrantPermissionTest, GrantAddSignatoryPermission) {
       .skipProposal()
       .checkBlock(
           [](auto &block) { ASSERT_EQ(block->transactions().size(), 1); })
-      // Add signatory
+          // Add signatory
       .sendTx(
           permiteeModifySignatory(&TestUnsignedTransactionBuilder::addSignatory,
                                   kAccount2,
@@ -561,23 +543,9 @@ TEST_F(GrantPermissionTest, GrantRemoveSignatoryPermission) {
   auto check_if_signatory_is_not_contained = checkSignatorySet(
       kAccount2Keypair, expected_number_of_signatories, is_contained);
 
-  IntegrationTestFramework(1)
-      .setInitialState(kAdminKeypair)
-      // Create account with rights to grant and read his/her signatories
-      .sendTx(makeAccountWithPerms(
-          kAccount1,
-          kAccount1Keypair,
-          concatenateVectors({kCanGrantCanAddMySignatory,
-                              kCanGrantCanRemoveMySignatory,
-                              kCanGetMySignatories}),
-          kRole1))
-      .skipProposal()
-      .skipBlock()
-      // Create account with rights to transfer and receive assets
-      .sendTx(makeAccountWithPerms(
-          kAccount2, kAccount2Keypair, kCanReceive, kRole2))
-      .skipProposal()
-      .skipBlock()
+  createTwoAccounts(concatenateVectors({kCanGrantCanAddMySignatory,
+                                        kCanGrantCanRemoveMySignatory,
+                                        kCanGetMySignatories}), kCanReceive)
       .sendTx(accountGrantToAccount(kAccount1,
                                     kAccount1Keypair,
                                     kAccount2,
@@ -626,21 +594,9 @@ TEST_F(GrantPermissionTest, GrantSetQuorumPermission) {
   auto quorum_quantity = 2;
   auto check_quorum_quantity = checkQuorum(quorum_quantity);
 
-  IntegrationTestFramework(1)
-      .setInitialState(kAdminKeypair)
-      .sendTx(
-          makeAccountWithPerms(kAccount1,
-                               kAccount1Keypair,
-                               concatenateVectors({kCanGrantCanSetMyQuorum,
-                                                   kCanGrantCanAddMySignatory,
-                                                   kCanGetMyAccount}),
-                               kRole1))
-      .skipProposal()
-      .skipBlock()
-      .sendTx(makeAccountWithPerms(
-          kAccount2, kAccount2Keypair, kCanReceive, kRole2))
-      .skipProposal()
-      .skipBlock()
+  createTwoAccounts(concatenateVectors({kCanGrantCanSetMyQuorum,
+                                        kCanGrantCanAddMySignatory,
+                                        kCanGetMyAccount}, kCanReceive)
       .sendTx(accountGrantToAccount(kAccount1,
                                     kAccount1Keypair,
                                     kAccount2,
@@ -682,20 +638,7 @@ TEST_F(GrantPermissionTest, GrantSetAccountDetailPermission) {
   auto check_account_detail =
       checkAccountDetail(kAccountDetailKey, kAccountDetailValue);
 
-  IntegrationTestFramework(1)
-      .setInitialState(kAdminKeypair)
-      .sendTx(makeAccountWithPerms(
-          kAccount1,
-          kAccount1Keypair,
-          concatenateVectors(
-              {kCanGrantCanSetMyAccountDetail, kCanGetMyAccountDetail}),
-          kRole1))
-      .skipProposal()
-      .skipBlock()
-      .sendTx(makeAccountWithPerms(
-          kAccount2, kAccount2Keypair, kCanReceive, kRole2))
-      .skipProposal()
-      .skipBlock()
+  createTwoAccounts(concatenateVectors({kCanGrantCanSetMyAccountDetail, kCanGetMyAccountDetail}), kCanReceive)
       .sendTx(accountGrantToAccount(kAccount1,
                                     kAccount1Keypair,
                                     kAccount2,
@@ -730,22 +673,7 @@ TEST_F(GrantPermissionTest, GrantSetAccountDetailPermission) {
 TEST_F(GrantPermissionTest, GrantTransferPermission) {
   auto amount_of_asset = "1000.00";
 
-  IntegrationTestFramework(1)
-      .setInitialState(kAdminKeypair)
-      .sendTx(makeAccountWithPerms(
-          kAccount1,
-          kAccount1Keypair,
-          concatenateVectors({kCanTransferMyAssets, kCanReceive}),
-          kRole1))
-      .skipProposal()
-      .skipBlock()
-      .sendTx(
-          makeAccountWithPerms(kAccount2,
-                               kAccount2Keypair,
-                               concatenateVectors({kCanTransfer, kCanReceive}),
-                               kRole2))
-      .skipProposal()
-      .skipBlock()
+  createTwoAccounts(concatenateVectors({kCanTransferMyAssets, kCanReceive}), concatenateVectors({kCanTransfer, kCanReceive}))
       .sendTx(accountGrantToAccount(kAccount1,
                                     kAccount1Keypair,
                                     kAccount2,
@@ -776,14 +704,7 @@ TEST_F(GrantPermissionTest, GrantTransferPermission) {
  * AND it is not written in the block
  */
 TEST_F(GrantPermissionTest, GrantWithoutGrantPermissions) {
-  IntegrationTestFramework(1)
-      .setInitialState(kAdminKeypair)
-      .sendTx(makeAccountWithPerms(
-          kAccount1, kAccount1Keypair, kCanReceive, kRole1))
-      .skipProposal()
-      .skipBlock()
-      .sendTx(makeAccountWithPerms(
-          kAccount2, kAccount2Keypair, kCanReceive, kRole2))
+  createTwoAccounts(kCanReceive, kCanReceive)
       .skipProposal()
       .skipBlock()
       .sendTx(accountGrantToAccount(kAccount1,
@@ -806,16 +727,7 @@ TEST_F(GrantPermissionTest, GrantWithoutGrantPermissions) {
  */
 
 TEST_F(GrantPermissionTest, GrantMoreThanOnce) {
-  IntegrationTestFramework(1)
-      .setInitialState(kAdminKeypair)
-      .sendTx(makeAccountWithPerms(
-          kAccount1, kAccount1Keypair, kCanGrantAll, kRole1))
-      .skipProposal()
-      .skipBlock()
-      .sendTx(makeAccountWithPerms(
-          kAccount2, kAccount2Keypair, kCanReceive, kRole2))
-      .skipProposal()
-      .skipBlock()
+  createTwoAccounts(kCanGrantAll, kCanReceive)
       .sendTx(accountGrantToAccount(kAccount1,
                                     kAccount1Keypair,
                                     kAccount2,
