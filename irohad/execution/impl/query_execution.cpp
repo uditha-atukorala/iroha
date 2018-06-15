@@ -78,14 +78,18 @@ bool hasQueryPermission(const std::string &creator,
                // 2. Creator want to query his account, must have role
                // permission
                (creator == target_account
-                and perms_set.value()[indiv_permission_id])
+                and perms_set.value().test(indiv_permission_id))
                or  // 3. Creator has global permission to get any account
-               perms_set.value()[all_permission_id]
+               perms_set.value().test(all_permission_id)
                or  // 4. Creator has domain permission
                (getDomainFromName(creator) == getDomainFromName(target_account)
-                and perms_set.value()[domain_permission_id])));
+                and perms_set.value().test(domain_permission_id))));
 }
-
+bool QueryProcessingFactory::validate(
+    const shared_model::interface::BlocksQuery &query) {
+  return checkAccountRolePermission(
+      query.creatorAccountId(), *_wsvQuery, Role::kGetBlocks);
+}
 bool QueryProcessingFactory::validate(
     const shared_model::interface::Query &query,
     const shared_model::interface::GetAssetInfo &get_asset_info) {
@@ -218,7 +222,11 @@ QueryProcessingFactory::executeGetRolePermissions(
     return buildError<shared_model::interface::NoRolesErrorResponse>();
   }
 
-  auto response = QueryResponseBuilder().rolePermissionsResponse(*perm);
+  shared_model::interface::RolePermissionSet set =
+      shared_model::interface::permissions::fromOldR(
+          std::set<std::string>{perm->begin(), perm->end()});
+
+  auto response = QueryResponseBuilder().rolePermissionsResponse(set);
   return response;
 }
 
@@ -240,21 +248,19 @@ QueryProcessingFactory::executeGetAccount(
 QueryProcessingFactory::QueryResponseBuilderDone
 QueryProcessingFactory::executeGetAccountAssets(
     const shared_model::interface::GetAccountAssets &query) {
-  auto acct_assets =
-      _wsvQuery->getAccountAssets(query.accountId());
+  auto acct_assets = _wsvQuery->getAccountAssets(query.accountId());
 
   if (not acct_assets) {
     return buildError<shared_model::interface::NoAccountAssetsErrorResponse>();
   }
   std::vector<shared_model::proto::AccountAsset> account_assets;
-  for (auto asset: *acct_assets) {
-    //TODO: IR-1239 remove static cast when query response builder is updated
+  for (auto asset : *acct_assets) {
+    // TODO: IR-1239 remove static cast when query response builder is updated
     // and accepts interface objects
     account_assets.push_back(
         *std::static_pointer_cast<shared_model::proto::AccountAsset>(asset));
   }
-  auto response =
-      QueryResponseBuilder().accountAssetResponse(account_assets);
+  auto response = QueryResponseBuilder().accountAssetResponse(account_assets);
   return response;
 }
 
@@ -334,7 +340,6 @@ QueryProcessingFactory::executeGetSignatories(
   auto response = QueryResponseBuilder().signatoriesResponse(*signs);
   return response;
 }
-
 std::shared_ptr<shared_model::interface::QueryResponse>
 QueryProcessingFactory::validateAndExecute(
     const shared_model::interface::Query &query) {
