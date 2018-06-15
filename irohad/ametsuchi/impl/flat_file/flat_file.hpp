@@ -55,7 +55,7 @@ namespace iroha {
 
       bool add(Identifier id, const std::vector<uint8_t> &blob) override;
 
-      boost::optional<std::vector<uint8_t>> get(Identifier id) const override;
+      boost::optional<Bytes> get(Identifier id) const override;
 
       std::string directory() const override;
 

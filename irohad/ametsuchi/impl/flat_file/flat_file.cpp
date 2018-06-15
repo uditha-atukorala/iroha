@@ -74,7 +74,7 @@ bool FlatFile::add(Identifier id, const std::vector<uint8_t> &block) {
   return true;
 }
 
-boost::optional<std::vector<uint8_t>> FlatFile::get(Identifier id) const {
+boost::optional<Bytes> FlatFile::get(Identifier id) const {
   const auto filename =
       boost::filesystem::path{dump_dir_} / FlatFile::id_to_name(id);
   if (not boost::filesystem::exists(filename)) {
@@ -82,7 +82,7 @@ boost::optional<std::vector<uint8_t>> FlatFile::get(Identifier id) const {
     return boost::none;
   }
   const auto fileSize = boost::filesystem::file_size(filename);
-  std::vector<uint8_t> buf;
+  Bytes buf;
   buf.resize(fileSize);
   boost::filesystem::ifstream file(filename, std::ifstream::binary);
   if (not file.is_open()) {

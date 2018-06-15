@@ -23,6 +23,7 @@ namespace iroha {
        * Type of storage key
        */
       using Identifier = uint32_t;
+      using Bytes = std::vector<uint8_t>;
 
       /**
        * Add entity with binary data
@@ -36,8 +37,7 @@ namespace iroha {
        * @param id - reference key
        * @return - blob, if exists
        */
-      virtual boost::optional<std::vector<uint8_t>> get(
-          Identifier id) const = 0;
+      virtual boost::optional<Bytes> get(Identifier id) const = 0;
 
       /**
        * @return folder of storage
@@ -45,7 +45,7 @@ namespace iroha {
       virtual std::string directory() const = 0;
 
       /**
-       * @return maximal not null key
+       * @return chronologically last not null key
        */
       virtual Identifier last_id() const = 0;
 
