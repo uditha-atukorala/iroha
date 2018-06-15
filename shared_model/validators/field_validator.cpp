@@ -25,7 +25,6 @@
 
 #include "cryptography/crypto_provider/crypto_verifier.hpp"
 #include "interfaces/queries/query_payload_meta.hpp"
-#include "permissions.hpp"
 #include "validators/field_validator.hpp"
 
 // TODO: 15.02.18 nickaleks Change structure to compositional IR-978
@@ -58,17 +57,18 @@ namespace shared_model {
     const size_t FieldValidator::value_size = 4 * 1024 * 1024;
     const size_t FieldValidator::description_size = 64;
 
+    const std::regex FieldValidator::account_name_regex_(account_name_pattern_);
+    const std::regex FieldValidator::asset_name_regex_(asset_name_pattern_);
+    const std::regex FieldValidator::domain_regex_(domain_pattern_);
+    const std::regex FieldValidator::ip_v4_regex_(ip_v4_pattern_);
+    const std::regex FieldValidator::peer_address_regex_(peer_address_pattern_);
+    const std::regex FieldValidator::account_id_regex_(account_id_pattern_);
+    const std::regex FieldValidator::asset_id_regex_(asset_id_pattern_);
+    const std::regex FieldValidator::detail_key_regex_(detail_key_pattern_);
+    const std::regex FieldValidator::role_id_regex_(role_id_pattern_);
+
     FieldValidator::FieldValidator(time_t future_gap)
-        : account_name_regex_(account_name_pattern_),
-          asset_name_regex_(asset_name_pattern_),
-          domain_regex_(domain_pattern_),
-          ip_v4_regex_(ip_v4_pattern_),
-          peer_address_regex_(peer_address_pattern_),
-          account_id_regex_(account_id_pattern_),
-          asset_id_regex_(asset_id_pattern_),
-          detail_key_regex_(detail_key_pattern_),
-          role_id_regex_(role_id_pattern_),
-          future_gap_(future_gap) {}
+        : future_gap_(future_gap) {}
 
     void FieldValidator::validateAccountId(
         ReasonsGroupType &reason,
@@ -231,28 +231,37 @@ namespace shared_model {
       }
     }
 
-    void FieldValidator::validatePermission(
+    void FieldValidator::validateRolePermission(
         ReasonsGroupType &reason,
-        const interface::types::PermissionNameType &permission_name) const {
-      if (shared_model::permissions::all_perm_group.find(permission_name)
-          == shared_model::permissions::all_perm_group.end()) {
-        reason.second.push_back("Provided permission does not exist");
+        const interface::permissions::Role &permission) const {
+      if (not isValid(permission)) {
+        reason.second.push_back("Provided role permission does not exist");
       }
     }
 
-    void FieldValidator::validatePermissions(
+    void FieldValidator::validateGrantablePermission(
         ReasonsGroupType &reason,
-        const interface::types::PermissionSetType &permissions) const {
-      if (permissions.empty()) {
+        const interface::permissions::Grantable &permission) const {
+      if (not isValid(permission)) {
+        reason.second.push_back("Provided grantable permission does not exist");
+      }
+    }
+
+    void FieldValidator::validateRolePermissions(
+        ReasonsGroupType &reason,
+        const interface::RolePermissionSet &permissions) const {
+      if (permissions.none()) {
         reason.second.push_back(
             "Permission set should contain at least one permission");
       }
-      if (not std::includes(shared_model::permissions::role_perm_group.begin(),
-                            shared_model::permissions::role_perm_group.end(),
-                            permissions.begin(),
-                            permissions.end())) {
+    }
+
+    void FieldValidator::validateGrantablePermissions(
+        ReasonsGroupType &reason,
+        const interface::GrantablePermissionSet &permissions) const {
+      if (permissions.none()) {
         reason.second.push_back(
-            "Provided permissions are not subset of the allowed permissions");
+            "Permission set should contain at least one permission");
       }
     }
 
