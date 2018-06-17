@@ -102,6 +102,7 @@ def doTestStep(testList) {
       + " -e IROHA_POSTGRES_USER=${env.IROHA_POSTGRES_USER}"
       + " -e IROHA_POSTGRES_PASSWORD=${env.IROHA_POSTGRES_PASSWORD}"
       + " --network=${env.IROHA_NETWORK}") {
+        sh "wget --tries=1 ${env.IROHA_POSTGRES_HOST}:${env.IROHA_POSTGRES_PORT}"
         def testExitCode = sh(script: """cd build && ctest --output-on-failure -R '${testList}' """, returnStatus: true)
         if (testExitCode != 0) {
           currentBuild.result = "UNSTABLE"

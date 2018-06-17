@@ -1,10 +1,11 @@
 #!/usr/bin/env groovy
 
+// choose platform to count coverage
 def choosePlatform() {
   if (params.Merge_PR) {
-		return CoveragePlatforms.x86_64_aws_cov.toString()
-	}
-	if (params.Linux) {
+    return CoveragePlatforms.x86_64_aws_cov.toString()
+  }
+  if (params.Linux) {
     return CoveragePlatforms.x86_64_aws_cov.toString()
   }
   if (!params.Linux && params.MacOS) {

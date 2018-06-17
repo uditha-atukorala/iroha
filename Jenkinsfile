@@ -468,6 +468,7 @@ pipeline {
       parallel {
         stage('Build release') {
           when {
+            beforeAgent true
             anyOf {
               allOf {
                 expression { return params.BUILD_TYPE == 'Debug' }
