@@ -51,10 +51,11 @@ namespace iroha {
        * otherwise.
        * @return True if transaction was successfully applied, false otherwise
        */
-      virtual bool apply(
+      virtual expected::Result<void, std::string> apply(
           const shared_model::interface::Transaction &,
-          std::function<bool(const shared_model::interface::Transaction &,
-                             WsvQuery &)> function) = 0;
+          std::function<expected::Result<void, std::string>(
+              const shared_model::interface::Transaction &, WsvQuery &)>
+              function) = 0;
 
       virtual ~TemporaryWsv() = default;
     };
