@@ -14,21 +14,23 @@ namespace iroha {
     auto OrderingInit::createGate(
         std::shared_ptr<OrderingGateTransport> transport,
         std::shared_ptr<ametsuchi::BlockQuery> block_query) {
-      shared_model::interface::types::HeightType height;
-      block_query->getTopBlock().match(
-          [&height](
+      return block_query->getTopBlock().match(
+          [this, &transport](
               expected::Value<std::shared_ptr<shared_model::interface::Block>>
-                  block) { height = block.value->height(); },
-          [](expected::Error<std::string> error) {
+                  &block) -> std::shared_ptr<ordering::OrderingGateImpl> {
+            const auto &height = block.value->height();
+            auto gate =
+                std::make_shared<ordering::OrderingGateImpl>(transport, height);
+            log_->info("Creating Ordering Gate with initial height {}", height);
+            transport->subscribe(gate);
+            return gate;
+          },
+          [](expected::Error<std::string> &error)
+              -> std::shared_ptr<ordering::OrderingGateImpl> {
             // TODO 12.06.18 Akvinikym: handle the exception IR-1415
             throw std::runtime_error("Ordering Gate creation failed! "
                                      + error.error);
           });
-      auto gate =
-          std::make_shared<ordering::OrderingGateImpl>(transport, height);
-      log_->info("Creating Ordering Gate with initial height {}", height);
-      transport->subscribe(gate);
-      return gate;
     }
 
     auto OrderingInit::createService(

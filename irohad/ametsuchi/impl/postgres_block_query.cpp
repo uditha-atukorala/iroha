@@ -244,6 +244,7 @@ namespace iroha {
 
     expected::Result<BlockQuery::wBlock, std::string>
     PostgresBlockQuery::getTopBlock() {
+      // TODO 18/06/18 Akvinikym: add dependency injection IR-937 IR-1040
       auto block =
           block_store_.get(block_store_.last_id()) | [](const auto &bytes) {
             return shared_model::converters::protobuf::jsonToModel<

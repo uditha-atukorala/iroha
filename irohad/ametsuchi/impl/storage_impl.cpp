@@ -32,7 +32,8 @@ namespace iroha {
     const char *kPsqlBroken = "Connection to PostgreSQL broken: %s";
     const char *kTmpWsv = "TemporaryWsv";
 
-    ConnectionContext::ConnectionContext(std::unique_ptr<KeyValueStorage> block_store)
+    ConnectionContext::ConnectionContext(
+        std::unique_ptr<KeyValueStorage> block_store)
         : block_store(std::move(block_store)) {}
 
     StorageImpl::StorageImpl(std::string block_store_dir,
@@ -79,10 +80,10 @@ namespace iroha {
           std::make_unique<MutableStorageImpl>(
               block_result.match(
                   [](expected::Value<
-                      std::shared_ptr<shared_model::interface::Block>> block) {
+                      std::shared_ptr<shared_model::interface::Block>> &block) {
                     return block.value->hash();
                   },
-                  [](expected::Error<std::string> error) {
+                  [](expected::Error<std::string> &) {
                     return shared_model::interface::types::HashType("");
                   }),
               std::move(postgres_connection),

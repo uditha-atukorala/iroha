@@ -21,6 +21,7 @@
 #include "ametsuchi/impl/postgres_block_query.hpp"
 #include "converters/protobuf/json_proto_converter.hpp"
 #include "framework/test_subscriber.hpp"
+#include "framework/result_fixture.hpp"
 #include "module/irohad/ametsuchi/ametsuchi_fixture.hpp"
 #include "module/irohad/ametsuchi/ametsuchi_mocks.hpp"
 #include "module/shared_model/builders/protobuf/test_block_builder.hpp"
@@ -404,18 +405,9 @@ TEST_F(BlockQueryTest, HasTxWithInvalidHash) {
  * @then returned top block's height is equal to the inserted one's
  */
 TEST_F(BlockQueryTest, GetTopBlockSuccess) {
-  boost::optional<shared_model::interface::types::HeightType> top_block_height;
-  blocks->getTopBlock().match(
-      [&top_block_height](
-          iroha::expected::Value<
-              std::shared_ptr<shared_model::interface::Block>> block) {
-        top_block_height = block.value->height();
-      },
-      [&top_block_height](iroha::expected::Error<std::string> error) {
-        top_block_height = boost::none;
-      });
-  ASSERT_TRUE(top_block_height);
-  ASSERT_EQ(top_block_height.value(), 2);
+  auto top_block_opt = framework::expected::val(blocks->getTopBlock());
+  ASSERT_TRUE(top_block_opt);
+  ASSERT_EQ(top_block_opt.value().value->height(), 2);
 }
 
 /**
@@ -428,16 +420,7 @@ TEST_F(BlockQueryTest, GetTopBlockFail) {
   EXPECT_CALL(*mock_file, get(mock_file->last_id()))
       .WillOnce(Return(boost::none));
 
-  boost::optional<std::string> top_block_error;
-  empty_blocks->getTopBlock().match(
-      [&top_block_error](
-          iroha::expected::Value<
-              std::shared_ptr<shared_model::interface::Block>> block) {
-        top_block_error = boost::none;
-      },
-      [&top_block_error](iroha::expected::Error<std::string> error) {
-        top_block_error = error.error;
-      });
+  auto top_block_error = framework::expected::err(empty_blocks->getTopBlock());
   ASSERT_TRUE(top_block_error);
-  ASSERT_EQ(top_block_error.value(), "error while fetching the last block");
+  ASSERT_EQ(top_block_error.value().error, "error while fetching the last block");
 }
