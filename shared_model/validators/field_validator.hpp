@@ -23,8 +23,9 @@
 #include "datetime/time.hpp"
 #include "interfaces/base/signable.hpp"
 #include "interfaces/commands/command.hpp"
-#include "interfaces/transaction.hpp"
+#include "interfaces/permissions.hpp"
 #include "interfaces/queries/query_payload_meta.hpp"
+#include "interfaces/transaction.hpp"
 #include "validators/answer.hpp"
 
 namespace shared_model {
@@ -107,13 +108,21 @@ namespace shared_model {
           ReasonsGroupType &reason,
           const interface::types::PrecisionType &precision) const;
 
-      void validatePermission(
+      void validateRolePermission(
           ReasonsGroupType &reason,
-          const interface::types::PermissionNameType &permission_name) const;
+          const interface::permissions::Role &permission) const;
 
-      void validatePermissions(
+      void validateGrantablePermission(
           ReasonsGroupType &reason,
-          const interface::types::PermissionSetType &permissions) const;
+          const interface::permissions::Grantable &permission) const;
+
+      void validateRolePermissions(
+          ReasonsGroupType &reason,
+          const interface::RolePermissionSet &permissions) const;
+
+      void validateGrantablePermissions(
+          ReasonsGroupType &reason,
+          const interface::GrantablePermissionSet &permissions) const;
 
       void validateQuorum(ReasonsGroupType &reason,
                           const interface::types::QuorumType &quorum) const;
@@ -134,8 +143,9 @@ namespace shared_model {
           const interface::types::SignatureRangeType &signatures,
           const crypto::Blob &source) const;
 
-      void validateQueryPayloadMeta(ReasonsGroupType &reason,
-                              const interface::QueryPayloadMeta &meta) const;
+      void validateQueryPayloadMeta(
+          ReasonsGroupType &reason,
+          const interface::QueryPayloadMeta &meta) const;
 
       void validateDescription(
           ReasonsGroupType &reason,
@@ -176,6 +186,7 @@ namespace shared_model {
 
       // size of key
       static const size_t public_key_size;
+      static const size_t signature_size;
       static const size_t value_size;
       static const size_t description_size;
     };

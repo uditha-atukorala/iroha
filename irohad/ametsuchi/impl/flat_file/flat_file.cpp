@@ -4,6 +4,7 @@
  */
 
 #include "ametsuchi/impl/flat_file/flat_file.hpp"
+
 #include <boost/filesystem.hpp>
 #include <boost/range/adaptor/indexed.hpp>
 #include <boost/range/algorithm/find_if.hpp>
