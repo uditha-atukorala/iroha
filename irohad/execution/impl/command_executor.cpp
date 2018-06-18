@@ -31,19 +31,19 @@ using namespace shared_model::proto::permissions;
 
 namespace iroha {
 
-  expected::Error<ExecutionError> makeExecutionError(
+  expected::Error<CommandError> makeCommandError(
       const std::string &error_message,
       const std::string command_name) noexcept {
-    return expected::makeError(ExecutionError{command_name, error_message});
+    return expected::makeError(CommandError{command_name, error_message});
   }
 
-  ExecutionResult makeExecutionResult(const ametsuchi::WsvCommandResult &result,
-                                      std::string command_name) noexcept {
+  CommandResult makeCommandResult(const ametsuchi::WsvCommandResult &result,
+                                  std::string command_name) noexcept {
     return result.match(
-        [](const expected::Value<void> &v) -> ExecutionResult { return {}; },
+        [](const expected::Value<void> &v) -> CommandResult { return {}; },
         [&command_name](
-            const expected::Error<ametsuchi::WsvError> &e) -> ExecutionResult {
-          return expected::makeError(ExecutionError{command_name, e.error});
+            const expected::Error<ametsuchi::WsvError> &e) -> CommandResult {
+          return expected::makeError(CommandError{command_name, e.error});
         });
   }
 
@@ -57,19 +57,19 @@ namespace iroha {
     this->creator_account_id = creator_account_id;
   }
 
-  ExecutionResult CommandExecutor::operator()(
+  CommandResult CommandExecutor::operator()(
       const shared_model::interface::AddAssetQuantity &command) {
     std::string command_name = "AddAssetQuantity";
     auto asset = queries->getAsset(command.assetId());
     if (not asset) {
-      return makeExecutionError(
+      return makeCommandError(
           (boost::format("asset %s is absent") % command.assetId()).str(),
           command_name);
     }
 
     auto precision = asset.value()->precision();
     if (command.amount().precision() > precision) {
-      return makeExecutionError(
+      return makeCommandError(
           (boost::format("command precision is greater than asset precision: "
                          "expected %d, but got %d")
            % precision % command.amount().precision())
@@ -79,7 +79,7 @@ namespace iroha {
     auto command_amount =
         makeAmountWithPrecision(command.amount(), asset.value()->precision());
     if (not queries->getAccount(command.accountId())) {
-      return makeExecutionError(
+      return makeCommandError(
           (boost::format("account %s is absent") % command.accountId()).str(),
           command_name);
     }
@@ -93,7 +93,7 @@ namespace iroha {
     };
     using AccountAssetResult =
         expected::Result<std::shared_ptr<shared_model::interface::AccountAsset>,
-                         iroha::ExecutionError>;
+                         iroha::CommandError>;
     auto account_asset_new = new_balance.match(
         [this, &account_asset, &command_name, &command](
             const expected::Value<
@@ -123,51 +123,51 @@ namespace iroha {
                 return expected::makeValue(new_account_asset_val.value);
               },
               [&command_name](const auto &error) -> AccountAssetResult {
-                return makeExecutionError(*error.error, command_name);
+                return makeCommandError(*error.error, command_name);
               });
         },
         [&command_name](const auto &error) -> AccountAssetResult {
-          return makeExecutionError(
+          return makeCommandError(
               "amount builder failed. reason " + *error.error, command_name);
         });
 
     return account_asset_new.match(
         [&](const expected::Value<
             std::shared_ptr<shared_model::interface::AccountAsset>>
-                &account_asset_new_val) -> ExecutionResult {
-          return makeExecutionResult(
+                &account_asset_new_val) -> CommandResult {
+          return makeCommandResult(
               commands->upsertAccountAsset(*account_asset_new_val.value),
               command_name);
         },
-        [&command_name](const auto &account_asset_error) -> ExecutionResult {
-          return makeExecutionError("account asset builder failed. reason "
-                                        + account_asset_error.error.toString(),
-                                    command_name);
+        [&command_name](const auto &account_asset_error) -> CommandResult {
+          return makeCommandError("account asset builder failed. reason "
+                                      + account_asset_error.error.toString(),
+                                  command_name);
         });
   }
 
-  ExecutionResult CommandExecutor::operator()(
+  CommandResult CommandExecutor::operator()(
       const shared_model::interface::AddPeer &command) {
-    return makeExecutionResult(commands->insertPeer(command.peer()), "AddPeer");
+    return makeCommandResult(commands->insertPeer(command.peer()), "AddPeer");
   }
 
-  ExecutionResult CommandExecutor::operator()(
+  CommandResult CommandExecutor::operator()(
       const shared_model::interface::AddSignatory &command) {
     auto result = commands->insertSignatory(command.pubkey()) | [&] {
       return commands->insertAccountSignatory(command.accountId(),
                                               command.pubkey());
     };
-    return makeExecutionResult(result, "AddSignatory");
+    return makeCommandResult(result, "AddSignatory");
   }
 
-  ExecutionResult CommandExecutor::operator()(
+  CommandResult CommandExecutor::operator()(
       const shared_model::interface::AppendRole &command) {
-    return makeExecutionResult(
+    return makeCommandResult(
         commands->insertAccountRole(command.accountId(), command.roleName()),
         "AppendRole");
   }
 
-  ExecutionResult CommandExecutor::operator()(
+  CommandResult CommandExecutor::operator()(
       const shared_model::interface::CreateAccount &command) {
     std::string command_name = "CreateAccount";
     auto account =
@@ -180,10 +180,10 @@ namespace iroha {
     return account.match(
         [&](const expected::Value<
             std::shared_ptr<shared_model::interface::Account>> &account_val)
-            -> ExecutionResult {
+            -> CommandResult {
           auto domain = queries->getDomain(command.domainId());
           if (not domain) {
-            return makeExecutionError(
+            return makeCommandError(
                 (boost::format("Domain %s not found") % command.domainId())
                     .str(),
                 command_name);
@@ -199,15 +199,15 @@ namespace iroha {
             return commands->insertAccountRole((*account_val.value).accountId(),
                                                domain_default_role);
           };
-          return makeExecutionResult(result, command_name);
+          return makeCommandResult(result, command_name);
         },
-        [&command_name](const auto &error) -> ExecutionResult {
-          return makeExecutionError(
+        [&command_name](const auto &error) -> CommandResult {
+          return makeCommandError(
               "account builder failed. reason " + *error.error, command_name);
         });
   }
 
-  ExecutionResult CommandExecutor::operator()(
+  CommandResult CommandExecutor::operator()(
       const shared_model::interface::CreateAsset &command) {
     std::string command_name = "CreateAsset";
     auto new_asset =
@@ -218,18 +218,18 @@ namespace iroha {
     return new_asset.match(
         [&](const expected::Value<
             std::shared_ptr<shared_model::interface::Asset>> &new_asset_val)
-            -> ExecutionResult {
+            -> CommandResult {
           // The insert will fail if asset already exists
-          return makeExecutionResult(
-              commands->insertAsset(*new_asset_val.value), command_name);
+          return makeCommandResult(commands->insertAsset(*new_asset_val.value),
+                                   command_name);
         },
-        [&command_name](const auto &error) -> ExecutionResult {
-          return makeExecutionError(
+        [&command_name](const auto &error) -> CommandResult {
+          return makeCommandError(
               "asset builder failed. reason " + *error.error, command_name);
         });
   }
 
-  ExecutionResult CommandExecutor::operator()(
+  CommandResult CommandExecutor::operator()(
       const shared_model::interface::CreateDomain &command) {
     std::string command_name = "CreateDomain";
     auto new_domain = domain_builder_.domainId(command.domainId())
@@ -238,18 +238,18 @@ namespace iroha {
     return new_domain.match(
         [&](const expected::Value<
             std::shared_ptr<shared_model::interface::Domain>> &new_domain_val)
-            -> ExecutionResult {
+            -> CommandResult {
           // The insert will fail if domain already exist
-          return makeExecutionResult(
+          return makeCommandResult(
               commands->insertDomain(*new_domain_val.value), command_name);
         },
-        [&command_name](const auto &error) -> ExecutionResult {
-          return makeExecutionError(
+        [&command_name](const auto &error) -> CommandResult {
+          return makeCommandError(
               "domain builder failed. reason " + *error.error, command_name);
         });
   }
 
-  ExecutionResult CommandExecutor::operator()(
+  CommandResult CommandExecutor::operator()(
       const shared_model::interface::CreateRole &command) {
     std::string command_name = "CreateRole";
     auto result = commands->insertRole(command.roleName()) | [&] {
@@ -257,26 +257,26 @@ namespace iroha {
       return commands->insertRolePermissions(command.roleName(),
                                              {tmp.begin(), tmp.end()});
     };
-    return makeExecutionResult(result, command_name);
+    return makeCommandResult(result, command_name);
   }
 
-  ExecutionResult CommandExecutor::operator()(
+  CommandResult CommandExecutor::operator()(
       const shared_model::interface::DetachRole &command) {
-    return makeExecutionResult(
+    return makeCommandResult(
         commands->deleteAccountRole(command.accountId(), command.roleName()),
         "DetachRole");
   }
 
-  ExecutionResult CommandExecutor::operator()(
+  CommandResult CommandExecutor::operator()(
       const shared_model::interface::GrantPermission &command) {
-    return makeExecutionResult(commands->insertAccountGrantablePermission(
-                                   command.accountId(),
-                                   creator_account_id,
-                                   toString(command.permissionName())),
-                               "GrantPermission");
+    return makeCommandResult(commands->insertAccountGrantablePermission(
+                                 command.accountId(),
+                                 creator_account_id,
+                                 toString(command.permissionName())),
+                             "GrantPermission");
   }
 
-  ExecutionResult CommandExecutor::operator()(
+  CommandResult CommandExecutor::operator()(
       const shared_model::interface::RemoveSignatory &command) {
     std::string command_name = "RemoveSignatory";
 
@@ -284,38 +284,38 @@ namespace iroha {
     auto result =
         commands->deleteAccountSignatory(command.accountId(), command.pubkey())
         | [&] { return commands->deleteSignatory(command.pubkey()); };
-    return makeExecutionResult(result, command_name);
+    return makeCommandResult(result, command_name);
   }
 
-  ExecutionResult CommandExecutor::operator()(
+  CommandResult CommandExecutor::operator()(
       const shared_model::interface::RevokePermission &command) {
-    return makeExecutionResult(commands->deleteAccountGrantablePermission(
-                                   command.accountId(),
-                                   creator_account_id,
-                                   toString(command.permissionName())),
-                               "RevokePermission");
+    return makeCommandResult(commands->deleteAccountGrantablePermission(
+                                 command.accountId(),
+                                 creator_account_id,
+                                 toString(command.permissionName())),
+                             "RevokePermission");
   }
 
-  ExecutionResult CommandExecutor::operator()(
+  CommandResult CommandExecutor::operator()(
       const shared_model::interface::SetAccountDetail &command) {
     auto creator = creator_account_id;
     if (creator_account_id.empty()) {
       // When creator is not known, it is genesis block
       creator = "genesis";
     }
-    return makeExecutionResult(
+    return makeCommandResult(
         commands->setAccountKV(
             command.accountId(), creator, command.key(), command.value()),
         "SetAccountDetail");
   }
 
-  ExecutionResult CommandExecutor::operator()(
+  CommandResult CommandExecutor::operator()(
       const shared_model::interface::SetQuorum &command) {
     std::string command_name = "SetQuorum";
 
     auto account = queries->getAccount(command.accountId());
     if (not account) {
-      return makeExecutionError(
+      return makeCommandError(
           (boost::format("absent account %s") % command.accountId()).str(),
           command_name);
     }
@@ -328,28 +328,28 @@ namespace iroha {
     return account_new.match(
         [&](const expected::Value<
             std::shared_ptr<shared_model::interface::Account>> &account_new_val)
-            -> ExecutionResult {
-          return makeExecutionResult(
+            -> CommandResult {
+          return makeCommandResult(
               commands->updateAccount(*account_new_val.value), command_name);
         },
-        [&command_name](const auto &error) -> ExecutionResult {
-          return makeExecutionError(
+        [&command_name](const auto &error) -> CommandResult {
+          return makeCommandError(
               "account builder failed. reason " + *error.error, command_name);
         });
   }
 
-  ExecutionResult CommandExecutor::operator()(
+  CommandResult CommandExecutor::operator()(
       const shared_model::interface::SubtractAssetQuantity &command) {
     std::string command_name = "SubtractAssetQuantity";
     auto asset = queries->getAsset(command.assetId());
     if (not asset) {
-      return makeExecutionError(
+      return makeCommandError(
           (boost::format("asset %s is absent") % command.assetId()).str(),
           command_name);
     }
     auto precision = asset.value()->precision();
     if (command.amount().precision() > precision) {
-      return makeExecutionError(
+      return makeCommandError(
           (boost::format("command precision is greater than asset precision: "
                          "expected %d, but got %d")
            % precision % command.amount().precision())
@@ -361,10 +361,10 @@ namespace iroha {
     auto account_asset =
         queries->getAccountAsset(command.accountId(), command.assetId());
     if (not account_asset) {
-      return makeExecutionError((boost::format("%s do not have %s")
-                                 % command.accountId() % command.assetId())
-                                    .str(),
-                                command_name);
+      return makeCommandError((boost::format("%s do not have %s")
+                               % command.accountId() % command.assetId())
+                                  .str(),
+                              command_name);
     }
     auto account_asset_new = command_amount |
         [&account_asset](const auto &amount) {
@@ -380,42 +380,42 @@ namespace iroha {
     return account_asset_new.match(
         [&](const expected::Value<
             std::shared_ptr<shared_model::interface::AccountAsset>>
-                &account_asset_new_val) -> ExecutionResult {
-          return makeExecutionResult(
+                &account_asset_new_val) -> CommandResult {
+          return makeCommandResult(
               commands->upsertAccountAsset(*account_asset_new_val.value),
               command_name);
         },
-        [&command_name](const auto &error) -> ExecutionResult {
-          return makeExecutionError(
+        [&command_name](const auto &error) -> CommandResult {
+          return makeCommandError(
               "account asset builder failed. reason " + *error.error,
               command_name);
         });
   }
 
-  ExecutionResult CommandExecutor::operator()(
+  CommandResult CommandExecutor::operator()(
       const shared_model::interface::TransferAsset &command) {
     std::string command_name = "TransferAsset";
 
     auto src_account_asset =
         queries->getAccountAsset(command.srcAccountId(), command.assetId());
     if (not src_account_asset) {
-      return makeExecutionError((boost::format("asset %s is absent of %s")
-                                 % command.assetId() % command.srcAccountId())
-                                    .str(),
-                                command_name);
+      return makeCommandError((boost::format("asset %s is absent of %s")
+                               % command.assetId() % command.srcAccountId())
+                                  .str(),
+                              command_name);
     }
     auto dest_account_asset =
         queries->getAccountAsset(command.destAccountId(), command.assetId());
     auto asset = queries->getAsset(command.assetId());
     if (not asset) {
-      return makeExecutionError((boost::format("asset %s is absent of %s")
-                                 % command.assetId() % command.destAccountId())
-                                    .str(),
-                                command_name);
+      return makeCommandError((boost::format("asset %s is absent of %s")
+                               % command.assetId() % command.destAccountId())
+                                  .str(),
+                              command_name);
     }
     auto precision = asset.value()->precision();
     if (command.amount().precision() > precision) {
-      return makeExecutionError(
+      return makeCommandError(
           (boost::format("command precision is greater than asset precision: "
                          "expected %d, but got %d")
            % precision % command.amount().precision())
@@ -439,7 +439,7 @@ namespace iroha {
     return src_account_asset_new.match(
         [&](const expected::Value<
             std::shared_ptr<shared_model::interface::AccountAsset>>
-                &src_account_asset_new_val) -> ExecutionResult {
+                &src_account_asset_new_val) -> CommandResult {
           expected::PolymorphicResult<shared_model::interface::AccountAsset,
                                       std::string>
               dest_account_asset_new;
@@ -464,23 +464,23 @@ namespace iroha {
           return dest_account_asset_new.match(
               [&](const expected::Value<
                   std::shared_ptr<shared_model::interface::AccountAsset>>
-                      &dest_account_asset_new_val) -> ExecutionResult {
+                      &dest_account_asset_new_val) -> CommandResult {
                 auto result = commands->upsertAccountAsset(
                                   *dest_account_asset_new_val.value)
                     | [&] {
                         return commands->upsertAccountAsset(
                             *src_account_asset_new_val.value);
                       };
-                return makeExecutionResult(result, command_name);
+                return makeCommandResult(result, command_name);
               },
-              [&command_name](const auto &error) -> ExecutionResult {
-                return makeExecutionError(
+              [&command_name](const auto &error) -> CommandResult {
+                return makeCommandError(
                     "account asset builder failed. reason " + *error.error,
                     command_name);
               });
         },
-        [&command_name](const auto &error) -> ExecutionResult {
-          return makeExecutionError(
+        [&command_name](const auto &error) -> CommandResult {
+          return makeCommandError(
               "account asset builder failed. reason " + *error.error,
               command_name);
         });
@@ -497,222 +497,441 @@ namespace iroha {
     this->creator_account_id = creator_account_id;
   }
 
-  bool CommandValidator::hasPermissions(
+  CommandResult CommandValidator::hasPermissions(
       const shared_model::interface::AddAssetQuantity &command,
       ametsuchi::WsvQuery &queries,
       const shared_model::interface::types::AccountIdType &creator_account_id) {
+    auto command_name = "AddAssetQuantity";
     // Check if creator has MoneyCreator permission.
     // One can only add to his/her account
     // TODO: 03.02.2018 grimadas IR-935, Separate asset creation for distinct
     // asset types, now: anyone having permission "can_add_asset_qty" can add
     // any asset
-    return creator_account_id == command.accountId()
-        and checkAccountRolePermission(
-                creator_account_id, queries, Role::kAddAssetQty);
+    if (creator_account_id != command.accountId()) {
+      return makeCommandError(
+          "has permission command validation failed: creator_account_id "
+              + creator_account_id + " is not equal to command account_id "
+              + command.accountId(),
+          command_name);
+    }
+    if (not checkAccountRolePermission(
+            creator_account_id, queries, Role::kAddAssetQty)) {
+      return makeCommandError(
+          "has permission command validation failed: account "
+              + creator_account_id + " does not have kAddAssetQty role",
+          command_name);
+    }
+    return {};
   }
 
-  bool CommandValidator::hasPermissions(
+  CommandResult CommandValidator::hasPermissions(
       const shared_model::interface::AddPeer &command,
       ametsuchi::WsvQuery &queries,
       const shared_model::interface::types::AccountIdType &creator_account_id) {
-    return checkAccountRolePermission(
-        creator_account_id, queries, Role::kAddPeer);
+    auto command_name = "AddPeer";
+    if (not checkAccountRolePermission(
+            creator_account_id, queries, Role::kAddPeer)) {
+      return makeCommandError(
+          "has permission command validation failed: account "
+              + creator_account_id + " does not have kAddPeer",
+          command_name);
+    }
+    return {};
   }
 
-  bool CommandValidator::hasPermissions(
+  CommandResult CommandValidator::hasPermissions(
       const shared_model::interface::AddSignatory &command,
       ametsuchi::WsvQuery &queries,
       const shared_model::interface::types::AccountIdType &creator_account_id) {
-    return
-        // Case 1. When command creator wants to add signatory to their
-        // account and he has permission CanAddSignatory
-        (command.accountId() == creator_account_id
-         and checkAccountRolePermission(
-                 creator_account_id, queries, Role::kAddSignatory))
-        or
-        // Case 2. Creator has granted permission for it
-        (queries.hasAccountGrantablePermission(
-            creator_account_id,
-            command.accountId(),
-            toString(Role::kAddMySignatory)));
+    auto command_name = "AddSignatory";
+
+    auto creator_adds_signatory_to_his_account =
+        creator_account_id == command.accountId();
+    auto creator_has_permission_on_own = checkAccountRolePermission(
+        creator_account_id, queries, Role::kAddSignatory);
+    auto creator_has_permission_on_other =
+        queries.hasAccountGrantablePermission(creator_account_id,
+                                              command.accountId(),
+                                              toString(Role::kAddMySignatory));
+
+    if (not creator_has_permission_on_other) {
+      // Case 1. When command creator wants to add signatory to their
+      // account and he has permission CanAddSignatory
+      if (creator_adds_signatory_to_his_account) {
+        if (creator_has_permission_on_own) {
+          return {};
+        } else {
+          return makeCommandError("has permission command validation failed: account "
+                                    + creator_account_id
+                                    + " does not have permission kAddSignatory for his own account",
+                                  command_name);
+        }
+      } else {
+        return makeCommandError(
+            "has permission command validation failed: account "
+                + creator_account_id
+                + " does not have permission kAddSignatory for account "
+                + command.accountId(),
+            command_name);
+      }
+    } else {
+      // Case 2. Creator has granted permission for it
+      return {};
+    }
   }
 
-  bool CommandValidator::hasPermissions(
+  CommandResult CommandValidator::hasPermissions(
       const shared_model::interface::AppendRole &command,
       ametsuchi::WsvQuery &queries,
       const shared_model::interface::types::AccountIdType &creator_account_id) {
-    return checkAccountRolePermission(
-        creator_account_id, queries, Role::kAppendRole);
+    auto command_name = "AppendRole";
+    if (not checkAccountRolePermission(
+            creator_account_id, queries, Role::kAppendRole)) {
+      return makeCommandError(
+          "has permission command validation failed: account "
+              + creator_account_id + " does not have permission kAppendRole",
+          command_name);
+    }
+    return {};
   }
 
-  bool CommandValidator::hasPermissions(
+  CommandResult CommandValidator::hasPermissions(
       const shared_model::interface::CreateAccount &command,
       ametsuchi::WsvQuery &queries,
       const shared_model::interface::types::AccountIdType &creator_account_id) {
-    return checkAccountRolePermission(
-        creator_account_id, queries, Role::kCreateAccount);
+    auto command_name = "CreateAccount";
+    if (not checkAccountRolePermission(
+            creator_account_id, queries, Role::kCreateAccount)) {
+      return makeCommandError(
+          "has permission command validation failed: account "
+              + creator_account_id + " does not have permission kCreateAccount",
+          command_name);
+    }
+    return {};
   }
 
-  bool CommandValidator::hasPermissions(
+  CommandResult CommandValidator::hasPermissions(
       const shared_model::interface::CreateAsset &command,
       ametsuchi::WsvQuery &queries,
       const shared_model::interface::types::AccountIdType &creator_account_id) {
-    return checkAccountRolePermission(
-        creator_account_id, queries, Role::kCreateAsset);
+    auto command_name = "CreateAsset";
+    if (not checkAccountRolePermission(
+            creator_account_id, queries, Role::kCreateAsset)) {
+      return makeCommandError(
+          "has permission command validation failed: account "
+              + creator_account_id + " does not have permission kCreateAsset",
+          command_name);
+    }
+    return {};
   }
 
-  bool CommandValidator::hasPermissions(
+  CommandResult CommandValidator::hasPermissions(
       const shared_model::interface::CreateDomain &command,
       ametsuchi::WsvQuery &queries,
       const shared_model::interface::types::AccountIdType &creator_account_id) {
-    return checkAccountRolePermission(
-        creator_account_id, queries, Role::kCreateDomain);
+    auto command_name = "CreateDomain";
+    if (not checkAccountRolePermission(
+            creator_account_id, queries, Role::kCreateDomain)) {
+      return makeCommandError(
+          "has permission command validation failed: account "
+              + creator_account_id + " does not have permission kCreateDomain",
+          command_name);
+    }
+    return {};
   }
 
-  bool CommandValidator::hasPermissions(
+  CommandResult CommandValidator::hasPermissions(
       const shared_model::interface::CreateRole &command,
       ametsuchi::WsvQuery &queries,
       const shared_model::interface::types::AccountIdType &creator_account_id) {
-    return checkAccountRolePermission(
-        creator_account_id, queries, Role::kCreateRole);
+    auto command_name = "CreateRole";
+    if (not checkAccountRolePermission(
+            creator_account_id, queries, Role::kCreateRole)) {
+      return makeCommandError(
+          "has permission command validation failed: account "
+              + creator_account_id + " does not have permission kCreateRole",
+          command_name);
+    }
+    return {};
   }
 
-  bool CommandValidator::hasPermissions(
+  CommandResult CommandValidator::hasPermissions(
       const shared_model::interface::DetachRole &command,
       ametsuchi::WsvQuery &queries,
       const shared_model::interface::types::AccountIdType &creator_account_id) {
-    return checkAccountRolePermission(
-        creator_account_id, queries, Role::kDetachRole);
+    auto command_name = "DetachRole";
+    if (not checkAccountRolePermission(
+            creator_account_id, queries, Role::kDetachRole)) {
+      return makeCommandError(
+          "has permission command validation failed: account "
+              + creator_account_id + " does not have permission kDetachRole",
+          command_name);
+    }
+    return {};
   }
 
-  bool CommandValidator::hasPermissions(
+  CommandResult CommandValidator::hasPermissions(
       const shared_model::interface::GrantPermission &command,
       ametsuchi::WsvQuery &queries,
       const shared_model::interface::types::AccountIdType &creator_account_id) {
-    return checkAccountRolePermission(
-        creator_account_id,
-        queries,
-        shared_model::interface::permissions::permissionFor(
-            command.permissionName()));
+    auto command_name = "GrantPermission";
+    if (not checkAccountRolePermission(
+            creator_account_id,
+            queries,
+            shared_model::interface::permissions::permissionFor(
+                command.permissionName()))) {
+      return makeCommandError(
+          "has permission command validation failed: account "
+              + creator_account_id + " does not have permission to grant "
+              + grantableToString(command.permissionName()),
+          command_name);
+    }
+    return {};
   }
 
-  bool CommandValidator::hasPermissions(
+  CommandResult CommandValidator::hasPermissions(
       const shared_model::interface::RemoveSignatory &command,
       ametsuchi::WsvQuery &queries,
       const shared_model::interface::types::AccountIdType &creator_account_id) {
-    return
-        // 1. Creator removes signatory from their account, and he must have
-        // permission on it
-        (creator_account_id == command.accountId()
-         and checkAccountRolePermission(
-                 creator_account_id, queries, Role::kRemoveSignatory))
-        // 2. Creator has granted permission on removal
-        or (queries.hasAccountGrantablePermission(
-               creator_account_id,
-               command.accountId(),
-               toString(Role::kRemoveMySignatory)));
-  }
+    auto command_name = "RemoveSignatory";
 
-  bool CommandValidator::hasPermissions(
-      const shared_model::interface::RevokePermission &command,
-      ametsuchi::WsvQuery &queries,
-      const shared_model::interface::types::AccountIdType &creator_account_id) {
-    return queries.hasAccountGrantablePermission(
-        command.accountId(),
-        creator_account_id,
-        toString(command.permissionName()));
-  }
-
-  bool CommandValidator::hasPermissions(
-      const shared_model::interface::SetAccountDetail &command,
-      ametsuchi::WsvQuery &queries,
-      const shared_model::interface::types::AccountIdType &creator_account_id) {
-    return
-        // Case 1. Creator set details for his account
-        creator_account_id == command.accountId() or
-        // Case 2. Creator has grantable permission to set account key/value
+    auto creator_removes_signatory_from_his_account =
+        creator_account_id == command.accountId();
+    auto creator_has_permission_on_own = checkAccountRolePermission(
+        creator_account_id, queries, Role::kRemoveSignatory);
+    auto creator_has_permission_on_other =
         queries.hasAccountGrantablePermission(
             creator_account_id,
             command.accountId(),
-            toString(Role::kSetMyAccountDetail));
+            toString(Role::kRemoveMySignatory));
+
+    if (not creator_has_permission_on_other) {
+      // 1. Creator removes signatory from their account, and he must have
+      // permission on it
+      if (creator_removes_signatory_from_his_account) {
+        if (creator_has_permission_on_own) {
+          return {};
+        } else {
+          return makeCommandError("has permission command validation failed: account "
+                                      + creator_account_id
+                                      + " does not have permission kRemoveMySignatory for his own account",
+                                  command_name);
+        }
+      } else {
+        return makeCommandError(
+            "has permission command validation failed: account "
+                + creator_account_id
+                + " does not have permission kRemoveMySignatory for account "
+                + command.accountId(),
+            command_name);
+      }
+    } else {
+      // 2. Creator has granted permission on removal
+      return {};
+    }
   }
 
-  bool CommandValidator::hasPermissions(
+  CommandResult CommandValidator::hasPermissions(
+      const shared_model::interface::RevokePermission &command,
+      ametsuchi::WsvQuery &queries,
+      const shared_model::interface::types::AccountIdType &creator_account_id) {
+    auto command_name = "RevokePermission";
+    if (not queries.hasAccountGrantablePermission(
+            command.accountId(),
+            creator_account_id,
+            toString(command.permissionName()))) {
+      return makeCommandError(
+          "has permission command validation failed: account "
+              + creator_account_id + " does not have permission to revoke "
+              + grantableToString(command.permissionName()),
+          command_name);
+    }
+    return {};
+  }
+
+  CommandResult CommandValidator::hasPermissions(
+      const shared_model::interface::SetAccountDetail &command,
+      ametsuchi::WsvQuery &queries,
+      const shared_model::interface::types::AccountIdType &creator_account_id) {
+    auto command_name = "SetAccountDetail";
+    if (creator_account_id != command.accountId()) {
+      if (queries.hasAccountGrantablePermission(
+              creator_account_id,
+              command.accountId(),
+              toString(Role::kSetMyAccountDetail))) {
+        // Case 1. Creator has grantable permission to set other's person
+        // account key/value
+        return {};
+      } else {
+        return makeCommandError(
+            "has permission command validation failed: account "
+                + creator_account_id
+                + " does not have permission kSetMyAccountDetail for account "
+                + command.accountId(),
+            command_name);
+      }
+    } else {
+      // Case 2. Creator set details for his account
+      return {};
+    }
+  }
+
+  CommandResult CommandValidator::hasPermissions(
       const shared_model::interface::SetQuorum &command,
       ametsuchi::WsvQuery &queries,
       const shared_model::interface::types::AccountIdType &creator_account_id) {
-    return
-        // 1. Creator set quorum for his account -> must have permission
-        (creator_account_id == command.accountId()
-         and checkAccountRolePermission(
-                 creator_account_id, queries, Role::kSetQuorum))
-        // 2. Creator has granted permission on it
-        or (queries.hasAccountGrantablePermission(
-               creator_account_id,
-               command.accountId(),
-               toString(Role::kSetMyQuorum)));
+    auto command_name = "SetQuorum";
+
+    auto creator_sets_quorum_for_his_account =
+        creator_account_id == command.accountId();
+    auto creator_has_permission_on_own = checkAccountRolePermission(
+        creator_account_id, queries, Role::kSetQuorum);
+    auto creator_has_permission_on_other =
+        queries.hasAccountGrantablePermission(creator_account_id,
+                                              command.accountId(),
+                                              toString(Role::kSetMyQuorum));
+
+    if (not creator_has_permission_on_other) {
+      // 1. Creator set quorum for his account -> must have permission
+      if (creator_sets_quorum_for_his_account) {
+        if (creator_has_permission_on_own) {
+          return {};
+        } else {
+          return makeCommandError(
+              "has permission command validation failed: account "
+                  + creator_account_id
+                  + " does not have permission kSetQuorum for his own account",
+              command_name);
+        }
+      } else {
+        return makeCommandError(
+            "has permission command validation failed: account "
+                + creator_account_id
+                + " does not have permission kSetMyQuorum for account "
+                + command.accountId(),
+            command_name);
+      }
+    } else {
+      // 2. Creator has granted permission on it
+      return {};
+    }
   }
 
-  bool CommandValidator::hasPermissions(
+  CommandResult CommandValidator::hasPermissions(
       const shared_model::interface::SubtractAssetQuantity &command,
       ametsuchi::WsvQuery &queries,
       const shared_model::interface::types::AccountIdType &creator_account_id) {
-    return creator_account_id == command.accountId()
-        and checkAccountRolePermission(
-                creator_account_id, queries, Role::kSubtractAssetQty);
+    auto command_name = "SubtractAssetQuantity";
+    if (creator_account_id == command.accountId()) {
+      if (checkAccountRolePermission(
+              creator_account_id, queries, Role::kSubtractAssetQty)) {
+        return {};
+      } else {
+        return makeCommandError("has permission command validation failed: account "
+                                    + creator_account_id
+                                    + " does not have permission kSubtractAssetQty for his own account",
+                                command_name);
+      }
+    } else {
+      return makeCommandError(
+          "has permission command validation failed: creator_account_id "
+              + creator_account_id + " is not equal to command account_id "
+              + command.accountId(),
+          command_name);
+    }
   }
 
-  bool CommandValidator::hasPermissions(
+  CommandResult CommandValidator::hasPermissions(
       const shared_model::interface::TransferAsset &command,
       ametsuchi::WsvQuery &queries,
       const shared_model::interface::types::AccountIdType &creator_account_id) {
-    return (
-               // 1. Creator has granted permission on src_account_id
-               (creator_account_id != command.srcAccountId()
-                and queries.hasAccountGrantablePermission(
-                        creator_account_id,
-                        command.srcAccountId(),
-                        toString(Role::kTransferMyAssets)))
-               or
-               // 2. Creator transfer from their account
-               (creator_account_id == command.srcAccountId()
-                and checkAccountRolePermission(
-                        creator_account_id, queries, Role::kTransfer)))
-        // For both cases, dest_account must have can_receive
-        and checkAccountRolePermission(
-                command.destAccountId(), queries, Role::kReceive);
+    auto command_name = "TransferAsset";
+
+    auto creator_transfers_from_his_account =
+        creator_account_id == command.srcAccountId();
+    auto creator_has_permission_on_own = checkAccountRolePermission(
+        creator_account_id, queries, Role::kTransfer);
+    auto creator_has_permission_on_src = queries.hasAccountGrantablePermission(
+        creator_account_id,
+        command.srcAccountId(),
+        toString(Role::kTransferMyAssets));
+    auto dest_can_receive = checkAccountRolePermission(
+        command.destAccountId(), queries, Role::kReceive);
+
+    if (dest_can_receive) {
+      if (creator_transfers_from_his_account) {
+        if (creator_has_permission_on_own) {
+          // 1. Creator transfers from their account
+          return {};
+        } else {
+          return makeCommandError(
+              "has permission command validation failed: creator_account_id "
+                  + creator_account_id
+                  + " does not have kTransfer for his own account",
+              command_name);
+        }
+      } else {
+        if (creator_has_permission_on_src) {
+          // 2. Creator has granted permission on src_account_id
+          return {};
+        } else {
+          return makeCommandError(
+              "has permission command validation failed: creator_account_id "
+                  + creator_account_id
+                  + " does not have kTransferMyAssets for account "
+                  + command.srcAccountId(),
+              command_name);
+        }
+      }
+    } else {
+      // For both cases, dest_account must have can_receive
+      return makeCommandError(
+          "has permission command validation failed: destination account "
+              + command.destAccountId() + " does not have kReceive",
+          command_name);
+    }
   }
 
-  bool CommandValidator::isValid(
+  CommandResult CommandValidator::isValid(
       const shared_model::interface::AddAssetQuantity &command,
       ametsuchi::WsvQuery &queries,
       const shared_model::interface::types::AccountIdType &creator_account_id) {
-    return true;
+    return {};
   }
 
-  bool CommandValidator::isValid(
+  CommandResult CommandValidator::isValid(
       const shared_model::interface::AddPeer &command,
       ametsuchi::WsvQuery &queries,
       const shared_model::interface::types::AccountIdType &creator_account_id) {
-    return true;
+    return {};
   }
 
-  bool CommandValidator::isValid(
+  CommandResult CommandValidator::isValid(
       const shared_model::interface::AddSignatory &command,
       ametsuchi::WsvQuery &queries,
       const shared_model::interface::types::AccountIdType &creator_account_id) {
-    return true;
+    return {};
   }
 
-  bool CommandValidator::isValid(
+  CommandResult CommandValidator::isValid(
       const shared_model::interface::AppendRole &command,
       ametsuchi::WsvQuery &queries,
       const shared_model::interface::types::AccountIdType &creator_account_id) {
+    auto command_name = "AppendRole";
     auto role_permissions = queries.getRolePermissions(command.roleName());
     auto account_roles = queries.getAccountRoles(creator_account_id);
 
-    if (not role_permissions or not account_roles) {
-      return false;
+    if (not role_permissions) {
+      return makeCommandError(
+          "is valid command validation failed: no permissions in role "
+              + command.roleName(),
+          command_name);
+    }
+    if (not account_roles) {
+      return makeCommandError(
+          "is valid command validation failed: no roles in account "
+              + creator_account_id,
+          command_name);
     }
 
     std::set<std::string> account_permissions;
@@ -724,138 +943,218 @@ namespace iroha {
         account_permissions.insert(permission);
     }
 
-    return std::none_of((*role_permissions).begin(),
-                        (*role_permissions).end(),
-                        [&account_permissions](const auto &perm) {
-                          return account_permissions.find(perm)
-                              == account_permissions.end();
-                        });
+    // Check that creator account has all permissions, which are in a role he
+    // wants to append to another account
+    if (std::any_of((*role_permissions).begin(),
+                    (*role_permissions).end(),
+                    [&account_permissions](const auto &perm) {
+                      return account_permissions.find(perm)
+                          == account_permissions.end();
+                    })) {
+      return makeCommandError(
+          "is valid command validation failed: account " + creator_account_id
+              + " does not have some of the permissions in a role "
+              + command.roleName() + " he wants to append",
+          command_name);
+    }
+
+    return {};
   }
 
-  bool CommandValidator::isValid(
+  CommandResult CommandValidator::isValid(
       const shared_model::interface::CreateAccount &command,
       ametsuchi::WsvQuery &queries,
       const shared_model::interface::types::AccountIdType &creator_account_id) {
-    return true;
+    return {};
   }
 
-  bool CommandValidator::isValid(
+  CommandResult CommandValidator::isValid(
       const shared_model::interface::CreateAsset &command,
       ametsuchi::WsvQuery &queries,
       const shared_model::interface::types::AccountIdType &creator_account_id) {
-    return true;
+    return {};
   }
 
-  bool CommandValidator::isValid(
+  CommandResult CommandValidator::isValid(
       const shared_model::interface::CreateDomain &command,
       ametsuchi::WsvQuery &queries,
       const shared_model::interface::types::AccountIdType &creator_account_id) {
-    return true;
+    return {};
   }
 
-  bool CommandValidator::isValid(
+  CommandResult CommandValidator::isValid(
       const shared_model::interface::CreateRole &command,
       ametsuchi::WsvQuery &queries,
       const shared_model::interface::types::AccountIdType &creator_account_id) {
+    auto command_name = "CreateRole";
     auto set = command.rolePermissions();
     for (size_t i = 0; i < set.size(); ++i) {
       auto perm = static_cast<shared_model::interface::permissions::Role>(i);
       if (set[perm]
-          && not checkAccountRolePermission(
-                 creator_account_id, queries, perm)) {
-        return false;
+          and not checkAccountRolePermission(
+                  creator_account_id, queries, perm)) {
+        return makeCommandError(
+            "is valid command validation failed: account " + creator_account_id
+                + " does not have some of the permissions in a role "
+                + command.roleName() + " he wants to create",
+            command_name);
       }
     }
-    return true;
+    return {};
   }
 
-  bool CommandValidator::isValid(
+  CommandResult CommandValidator::isValid(
       const shared_model::interface::DetachRole &command,
       ametsuchi::WsvQuery &queries,
       const shared_model::interface::types::AccountIdType &creator_account_id) {
-    return true;
+    return {};
   }
 
-  bool CommandValidator::isValid(
+  CommandResult CommandValidator::isValid(
       const shared_model::interface::GrantPermission &command,
       ametsuchi::WsvQuery &queries,
       const shared_model::interface::types::AccountIdType &creator_account_id) {
-    return true;
+    return {};
   }
 
-  bool CommandValidator::isValid(
+  CommandResult CommandValidator::isValid(
       const shared_model::interface::RemoveSignatory &command,
       ametsuchi::WsvQuery &queries,
       const shared_model::interface::types::AccountIdType &creator_account_id) {
+    auto command_name = "RemoveSignatory";
     auto account = queries.getAccount(command.accountId());
     auto signatories = queries.getSignatories(command.accountId());
 
-    if (not(account and signatories)) {
-      // No account or signatories found
-      return false;
+    if (not account) {
+      return makeCommandError(
+          "is valid command validation failed: no account with such ID found "
+              + command.accountId(),
+          command_name);
     }
+    if (not signatories) {
+      return makeCommandError(
+          "is valid command validation failed: no signatories in account with "
+          "such ID found "
+              + command.accountId(),
+          command_name);
+    }
+
     auto newSignatoriesSize = signatories.value().size() - 1;
 
     // You can't remove if size of rest signatories less than the quorum
-    return newSignatoriesSize >= account.value()->quorum();
+
+    if (newSignatoriesSize < account.value()->quorum()) {
+      return makeCommandError(
+          "is valid command validation failed: size of rest signatories "
+          "becomes less than the quorum; account id "
+              + command.accountId(),
+          command_name);)
+    }
+
+    return {};
   }
 
-  bool CommandValidator::isValid(
+  CommandResult CommandValidator::isValid(
       const shared_model::interface::RevokePermission &command,
       ametsuchi::WsvQuery &queries,
       const shared_model::interface::types::AccountIdType &creator_account_id) {
-    return true;
+    return {};
   }
 
-  bool CommandValidator::isValid(
+  CommandResult CommandValidator::isValid(
       const shared_model::interface::SetAccountDetail &command,
       ametsuchi::WsvQuery &queries,
       const shared_model::interface::types::AccountIdType &creator_account_id) {
-    return true;
+    return {};
   }
 
-  bool CommandValidator::isValid(
+  CommandResult CommandValidator::isValid(
       const shared_model::interface::SetQuorum &command,
       ametsuchi::WsvQuery &queries,
       const shared_model::interface::types::AccountIdType &creator_account_id) {
+    auto command_name = "SetQuorum";
     auto signatories = queries.getSignatories(command.accountId());
 
     if (not(signatories)) {
       // No  signatories of an account found
-      return false;
+      return makeCommandError(
+          "is valid command validation failed: no signatories of an account "
+          "found; account id "
+              + command.accountId(),
+          command_name);
+    }
+    if (command.newQuorum() <= 0 or command.newQuorum() >= 10) {
+      return makeCommandError(
+          "is valid command validation failed: new quorum is out of bounds; "
+          "value is "
+              + command.newQuorum(),
+          command_name);
     }
     // You can't remove if size of rest signatories less than the quorum
-    return command.newQuorum() > 0 and command.newQuorum() < 10
-        and signatories.value().size() >= command.newQuorum();
+    if (signatories.value().size() < command.newQuorum()) {
+      return makeCommandError(
+          "is valid command validation failed: new quorum size is greater than "
+          "the signatories amount; "
+              + command.newQuorum() + " vs "s + signatories.value().size(),
+          command_name);
+    }
+
+    return {};
   }
 
-  bool CommandValidator::isValid(
+  CommandResult CommandValidator::isValid(
       const shared_model::interface::SubtractAssetQuantity &command,
       ametsuchi::WsvQuery &queries,
       const shared_model::interface::types::AccountIdType &creator_account_id) {
-    return true;
+    return {};
   }
 
-  bool CommandValidator::isValid(
+  CommandResult CommandValidator::isValid(
       const shared_model::interface::TransferAsset &command,
       ametsuchi::WsvQuery &queries,
       const shared_model::interface::types::AccountIdType &creator_account_id) {
+    auto command_name = "TransferAsset";
     auto asset = queries.getAsset(command.assetId());
     if (not asset) {
-      return false;
+      return makeCommandError(
+          "is valid command validation failed: no asset with such id "
+              + command.assetId(),
+          command_name);
     }
     // Amount is formed wrong
     if (command.amount().precision() > asset.value()->precision()) {
-      return false;
+      return makeCommandError(
+          "is valid command validation failed: precision of command's asset "
+          "amount is greater than the actual asset's one; "
+              + command.amount().precision() + " vs "s
+              + asset.value()->precision(),
+          command_name);
     }
     auto account_asset =
         queries.getAccountAsset(command.srcAccountId(), command.assetId());
     if (not account_asset) {
-      return false;
+      return makeCommandError(
+          "is valid command validation failed: asset " + command.assetId()
+              + " does not exist on account " + command.srcAccountId(),
+          command_name);
     }
     // Check if dest account exist
-    return queries.getAccount(command.destAccountId()) and
-        // Balance in your wallet should be at least amount of transfer
-        compareAmount(account_asset.value()->balance(), command.amount()) >= 0;
+    if (not queries.getAccount(command.destAccountId())) {
+      return makeCommandError(
+          "is valid command validation failed: destination account with id "
+              + command.destAccountId() + " does not exist",
+          command_name);
+    }
+    // Balance in your wallet should be at least amount of transfer
+    if (not compareAmount(account_asset.value()->balance(), command.amount())
+        >= 0) {
+      return makeCommandError(
+          "is valid command validation failed: not enough balance on account "
+          "with id "
+          + command.srcAccountId() + "; transfer amount " + command.amount()
+          + ", balance " + account_asset.value()->balance());
+          command_name);
+    }
+    return {};
   }
 }  // namespace iroha

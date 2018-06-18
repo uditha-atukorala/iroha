@@ -62,9 +62,8 @@ namespace iroha {
             [](expected::Value<void> &v) { return {}; },
             [](expected::Error<ExecutionError> &e) {
               return expected::makeError(boost::format(
-                  "stateful validation error: could not execute command %s "
-                  "with index %d: %s"
-                  % command.toString() % command_index % e.error.toString()));
+                  "stateful validation error: could not execute command with index %d: %s"
+                  % command_index % e.error.toString()));
             });
       };
       transaction_->exec("SAVEPOINT savepoint_;");

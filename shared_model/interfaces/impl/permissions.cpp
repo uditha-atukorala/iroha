@@ -26,6 +26,22 @@ namespace shared_model {
         }
         return Role::COUNT;
       }
+
+      std::string grantableToString(Grantable grantable) {
+        switch (grantable) {
+          case Grantable::kAddMySignatory:
+            return "kAddMySignatory";
+          case Grantable::kRemoveMySignatory:
+            return "kRemoveMySignatory";
+          case Grantable::kSetMyQuorum:
+            return "kSetMyQuorum";
+          case Grantable::kSetMyAccountDetail:
+            return "kSetMyAccountDetail";
+          case Grantable::kTransferMyAssets:
+            return "kTransferMyAssets";
+        }
+      }
+
     }  // namespace permissions
   }    // namespace interface
 }  // namespace shared_model

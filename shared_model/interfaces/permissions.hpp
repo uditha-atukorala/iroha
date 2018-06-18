@@ -71,6 +71,7 @@ namespace shared_model {
       };
 
       Role permissionFor(Grantable);
+      std::string grantableToString(Grantable grantable);
     }  // namespace permissions
 
     template <typename Perm>
