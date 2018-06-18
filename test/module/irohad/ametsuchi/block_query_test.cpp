@@ -36,7 +36,7 @@ class BlockQueryTest : public AmetsuchiTest {
   void SetUp() override {
     AmetsuchiTest::SetUp();
 
-    auto tmp = FlatFileImpl::create(block_store_path);
+    auto tmp = FlatFile::create(block_store_path);
     ASSERT_TRUE(tmp);
     file = std::move(*tmp);
     mock_file = std::make_shared<MockKeyValueStorage>();
@@ -103,7 +103,7 @@ class BlockQueryTest : public AmetsuchiTest {
   std::shared_ptr<BlockQuery> blocks;
   std::shared_ptr<BlockQuery> empty_blocks;
   std::shared_ptr<BlockIndex> index;
-  std::unique_ptr<FlatFileImpl> file;
+  std::unique_ptr<FlatFile> file;
   std::shared_ptr<MockKeyValueStorage> mock_file;
   std::string creator1 = "user1@test";
   std::string creator2 = "user2@test";
@@ -317,7 +317,7 @@ TEST_F(BlockQueryTest, GetBlockButItIsNotJSON) {
 
   // write something that is NOT JSON to block #1
   auto block_path =
-      fs::path{block_store_path} / FlatFileImpl::id_to_name(block_n);
+      fs::path{block_store_path} / FlatFile::id_to_name(block_n);
   fs::ofstream block_file(block_path);
   std::string content = R"(this is definitely not json)";
   block_file << content;
@@ -343,7 +343,7 @@ TEST_F(BlockQueryTest, GetBlockButItIsInvalidBlock) {
 
   // write bad block instead of block #1
   auto block_path =
-      fs::path{block_store_path} / FlatFileImpl::id_to_name(block_n);
+      fs::path{block_store_path} / FlatFile::id_to_name(block_n);
   fs::ofstream block_file(block_path);
   std::string content = R"({
   "testcase": [],

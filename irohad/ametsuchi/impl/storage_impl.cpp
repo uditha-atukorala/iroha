@@ -17,7 +17,7 @@
 
 #include "ametsuchi/impl/storage_impl.hpp"
 #include <boost/format.hpp>
-#include "ametsuchi/impl/flat_file/impl/flat_file_impl.hpp"  // for FlatFiles
+#include "ametsuchi/impl/flat_file/flat_file.hpp"  // for FlatFiles
 #include "ametsuchi/impl/mutable_storage_impl.hpp"
 #include "ametsuchi/impl/postgres_block_query.hpp"
 #include "ametsuchi/impl/postgres_wsv_query.hpp"
@@ -202,7 +202,7 @@ DROP TABLE IF EXISTS index_by_id_height_asset;
       auto log_ = logger::log("StorageImpl:initConnection");
       log_->info("Start storage creation");
 
-      auto block_store = FlatFileImpl::create(block_store_dir);
+      auto block_store = FlatFile::create(block_store_dir);
       if (not block_store) {
         return expected::makeError(
             (boost::format("Cannot create block store in %s") % block_store_dir)

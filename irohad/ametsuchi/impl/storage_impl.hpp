@@ -31,7 +31,7 @@
 namespace iroha {
   namespace ametsuchi {
 
-    class FlatFileImpl;
+    class FlatFile;
 
     struct ConnectionContext {
       explicit ConnectionContext(std::unique_ptr<KeyValueStorage> block_store);

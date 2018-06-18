@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "ametsuchi/impl/flat_file/impl/flat_file_impl.hpp"
+#include "flat_file.hpp"
 
 #include <boost/filesystem.hpp>
 #include <boost/range/adaptor/indexed.hpp>
@@ -14,17 +14,17 @@
 #include "common/files.hpp"
 
 using namespace iroha::ametsuchi;
-using Identifier = FlatFileImpl::Identifier;
+using Identifier = FlatFile::Identifier;
 
 // ----------| public API |----------
 
-std::string FlatFileImpl::id_to_name(Identifier id) {
+std::string FlatFile::id_to_name(Identifier id) {
   std::ostringstream os;
-  os << std::setw(FlatFileImpl::DIGIT_CAPACITY) << std::setfill('0') << id;
+  os << std::setw(FlatFile::DIGIT_CAPACITY) << std::setfill('0') << id;
   return os.str();
 }
 
-boost::optional<std::unique_ptr<FlatFileImpl>> FlatFileImpl::create(
+boost::optional<std::unique_ptr<FlatFile>> FlatFile::create(
     const std::string &path) {
   auto log_ = logger::log("KeyValueStorage::create()");
 
@@ -35,11 +35,11 @@ boost::optional<std::unique_ptr<FlatFileImpl>> FlatFileImpl::create(
     return boost::none;
   }
 
-  auto res = FlatFileImpl::check_consistency(path);
-  return std::make_unique<FlatFileImpl>(*res, path, private_tag{});
+  auto res = FlatFile::check_consistency(path);
+  return std::make_unique<FlatFile>(*res, path, private_tag{});
 }
 
-bool FlatFileImpl::add(Identifier id, const std::vector<uint8_t> &block) {
+bool FlatFile::add(Identifier id, const std::vector<uint8_t> &block) {
   // TODO(x3medima17): Change bool to generic Result return type
 
   if (id != current_id_ + 1) {
@@ -74,9 +74,9 @@ bool FlatFileImpl::add(Identifier id, const std::vector<uint8_t> &block) {
   return true;
 }
 
-boost::optional<std::vector<uint8_t>> FlatFileImpl::get(Identifier id) const {
+boost::optional<std::vector<uint8_t>> FlatFile::get(Identifier id) const {
   const auto filename =
-      boost::filesystem::path{dump_dir_} / FlatFileImpl::id_to_name(id);
+      boost::filesystem::path{dump_dir_} / FlatFile::id_to_name(id);
   if (not boost::filesystem::exists(filename)) {
     log_->info("get({}) file not found", id);
     return boost::none;
@@ -93,31 +93,31 @@ boost::optional<std::vector<uint8_t>> FlatFileImpl::get(Identifier id) const {
   return buf;
 }
 
-std::string FlatFileImpl::directory() const {
+std::string FlatFile::directory() const {
   return dump_dir_;
 }
 
-Identifier FlatFileImpl::last_id() const {
+Identifier FlatFile::last_id() const {
   return current_id_.load();
 }
 
-void FlatFileImpl::dropAll() {
+void FlatFile::dropAll() {
   iroha::remove_dir_contents(dump_dir_);
-  auto res = FlatFileImpl::check_consistency(dump_dir_);
+  auto res = FlatFile::check_consistency(dump_dir_);
   current_id_.store(*res);
 }
 
 // ----------| private API |----------
 
-FlatFileImpl::FlatFileImpl(Identifier current_id,
-                           const std::string &path,
-                           FlatFileImpl::private_tag)
+FlatFile::FlatFile(Identifier current_id,
+                   const std::string &path,
+                   FlatFile::private_tag)
     : dump_dir_(path) {
   log_ = logger::log("KeyValueStorage");
   current_id_.store(current_id);
 }
 
-boost::optional<Identifier> FlatFileImpl::check_consistency(
+boost::optional<Identifier> FlatFile::check_consistency(
     const std::string &dump_dir) {
   auto log = logger::log("FLAT_FILE");
 
@@ -137,7 +137,7 @@ boost::optional<Identifier> FlatFileImpl::check_consistency(
 
   auto const missing = boost::range::find_if(
       files | boost::adaptors::indexed(1), [](const auto &it) {
-        return FlatFileImpl::id_to_name(it.index()) != it.value().filename();
+        return FlatFile::id_to_name(it.index()) != it.value().filename();
       });
 
   std::for_each(
