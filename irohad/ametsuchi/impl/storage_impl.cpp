@@ -66,6 +66,7 @@ namespace iroha {
       wsv_transaction_->exec(init_);
       wsv_transaction_->exec(add_extansion);
       wsv_transaction_->exec(add_asset_quantity_command);
+      wsv_transaction_->exec(get_account_query);
       wsv_transaction_->exec(
           "SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY;");
     }
@@ -178,7 +179,7 @@ DROP TABLE IF EXISTS account_has_asset;
 DROP TABLE IF EXISTS role_has_permissions;
 DROP TABLE IF EXISTS account_has_roles;
 DROP TABLE IF EXISTS account_has_grantable_permissions;
-DROP TABLE IF EXISTS account;
+DROP TABLE IF EXISTS account CASCADE;
 DROP TABLE IF EXISTS asset;
 DROP TABLE IF EXISTS domain;
 DROP TABLE IF EXISTS signatory;
@@ -200,6 +201,10 @@ DROP TABLE IF EXISTS index_by_id_height_asset;
       pqxx::work init_txn(connection);
       init_txn.exec(init_);
       init_txn.commit();
+
+      pqxx::work init_func(connection);
+      init_func.exec(get_account_query);
+      init_func.commit();
 
       // erase blocks
       log_->info("drop block store");

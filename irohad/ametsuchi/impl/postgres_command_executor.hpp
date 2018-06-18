@@ -51,6 +51,14 @@ namespace iroha {
         "   return 10\n"
         " return 0\n"
         "$$ LANGUAGE plpython3u";
+
+    std::string get_account_query =
+        ""
+        "CREATE OR REPLACE FUNCTION GetAccount("
+            "account_id_value varchar)"
+            " RETURNS TABLE (account_id varchar, domain_id varchar, quorum int, data JSONB) AS $$\n"
+            " SELECT * FROM account WHERE account_id = account_id_value;\n"
+            " $$ LANGUAGE sql;";
   }  // namespace ametsuchi
 }  // namespace iroha
 #endif  // IROHA_POSTGRES_COMMAND_EXECUTOR_HPP

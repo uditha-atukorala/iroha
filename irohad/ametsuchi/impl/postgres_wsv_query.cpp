@@ -97,8 +97,8 @@ namespace iroha {
 
     boost::optional<std::shared_ptr<shared_model::interface::Account>>
     PostgresWsvQuery::getAccount(const AccountIdType &account_id) {
-      return execute_("SELECT * FROM account WHERE account_id = "
-                      + transaction_.quote(account_id) + ";")
+      return execute_("SELECT * FROM GetAccount( "
+                      + transaction_.quote(account_id) + ");")
                  | [&](const auto &result)
                  -> boost::optional<
                      std::shared_ptr<shared_model::interface::Account>> {

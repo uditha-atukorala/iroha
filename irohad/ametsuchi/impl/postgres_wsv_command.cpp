@@ -398,10 +398,25 @@ namespace iroha {
         const std::string &asset_id,
         const std::string amount_value,
         const int amount_precision) {
-      std::string query =
-          (boost::format("SELECT AddAssetQuantity('%s', '%s', '%s', %d);")
-           % account_id % asset_id % amount_value % amount_precision)
-              .str();
+//      std::string query =
+//          (boost::format("SELECT AddAssetQuantity('%s', '%s', '%s', %d);")
+//           % account_id % asset_id % amount_value % amount_precision)
+//              .str();
+      std::string query = (boost::format("INSERT INTO account_has_asset(account_id, asset_id, amount) \n"
+          "            VALUES (\n"
+          "            '%s', '%s', %s + \n"
+          "\t\t\t\t(\n"
+          "\t\t\t\t\tWITH t AS (SELECT amount FROM account_has_asset WHERE asset_id = '%s')\n"
+          "\t\t\t\t\tSELECT \n"
+          "\t\t\t\t\t\tCASE WHEN EXISTS (SELECT amount FROM t) THEN (SELECT amount FROM t) \n"
+          "\t\t\t\t\t\tELSE 0::decimal\n"
+          "\t\t\t\t\tEND\n"
+          "\t\t\t\t)\n"
+          "\t\t\t)\n"
+          "\t\t\tON CONFLICT (account_id, asset_id) DO UPDATE SET amount = EXCLUDED.amount\n"
+          "            WHERE EXISTS (SELECT asset_id FROM asset WHERE asset_id = '%s' AND precision = %d)\n"
+          "            AND EXISTS (SELECT account_id FROM account WHERE account_id = '%s');"
+      ) % account_id % asset_id % amount_value % asset_id % asset_id % amount_precision % account_id).str();
 //      auto *code = transaction_.exec(query).at(0).at(0).c_str();
       auto result = execute_(query);
       auto message_gen = [&] {
