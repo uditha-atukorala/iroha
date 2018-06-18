@@ -3,8 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "flat_file.hpp"
-
+#include "ametsuchi/impl/flat_file/flat_file.hpp"
 #include <boost/filesystem.hpp>
 #include <boost/range/adaptor/indexed.hpp>
 #include <boost/range/algorithm/find_if.hpp>
@@ -26,7 +25,7 @@ std::string FlatFile::id_to_name(Identifier id) {
 
 boost::optional<std::unique_ptr<FlatFile>> FlatFile::create(
     const std::string &path) {
-  auto log_ = logger::log("KeyValueStorage::create()");
+  auto log_ = logger::log("FlatFile::create()");
 
   boost::system::error_code err;
   if (not boost::filesystem::is_directory(path, err)
@@ -39,7 +38,7 @@ boost::optional<std::unique_ptr<FlatFile>> FlatFile::create(
   return std::make_unique<FlatFile>(*res, path, private_tag{});
 }
 
-bool FlatFile::add(Identifier id, const std::vector<uint8_t> &block) {
+bool FlatFile::add(Identifier id, const Bytes &block) {
   // TODO(x3medima17): Change bool to generic Result return type
 
   if (id != current_id_ + 1) {
@@ -74,7 +73,7 @@ bool FlatFile::add(Identifier id, const std::vector<uint8_t> &block) {
   return true;
 }
 
-boost::optional<std::vector<uint8_t>> FlatFile::get(Identifier id) const {
+boost::optional<FlatFile::Bytes> FlatFile::get(Identifier id) const {
   const auto filename =
       boost::filesystem::path{dump_dir_} / FlatFile::id_to_name(id);
   if (not boost::filesystem::exists(filename)) {
@@ -82,7 +81,7 @@ boost::optional<std::vector<uint8_t>> FlatFile::get(Identifier id) const {
     return boost::none;
   }
   const auto fileSize = boost::filesystem::file_size(filename);
-  std::vector<uint8_t> buf;
+  Bytes buf;
   buf.resize(fileSize);
   boost::filesystem::ifstream file(filename, std::ifstream::binary);
   if (not file.is_open()) {
@@ -113,7 +112,7 @@ FlatFile::FlatFile(Identifier current_id,
                    const std::string &path,
                    FlatFile::private_tag)
     : dump_dir_(path) {
-  log_ = logger::log("KeyValueStorage");
+  log_ = logger::log("FlatFile");
   current_id_.store(current_id);
 }
 

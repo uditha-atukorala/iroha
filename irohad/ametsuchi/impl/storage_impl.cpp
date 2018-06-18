@@ -17,7 +17,7 @@
 
 #include "ametsuchi/impl/storage_impl.hpp"
 #include <boost/format.hpp>
-#include "ametsuchi/impl/flat_file/flat_file.hpp"  // for FlatFiles
+#include "ametsuchi/impl/flat_file/flat_file.hpp"
 #include "ametsuchi/impl/mutable_storage_impl.hpp"
 #include "ametsuchi/impl/postgres_block_query.hpp"
 #include "ametsuchi/impl/postgres_wsv_query.hpp"

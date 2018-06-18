@@ -316,8 +316,7 @@ TEST_F(BlockQueryTest, GetBlockButItIsNotJSON) {
   size_t block_n = 1;
 
   // write something that is NOT JSON to block #1
-  auto block_path =
-      fs::path{block_store_path} / FlatFile::id_to_name(block_n);
+  auto block_path = fs::path{block_store_path} / FlatFile::id_to_name(block_n);
   fs::ofstream block_file(block_path);
   std::string content = R"(this is definitely not json)";
   block_file << content;
@@ -342,8 +341,7 @@ TEST_F(BlockQueryTest, GetBlockButItIsInvalidBlock) {
   size_t block_n = 1;
 
   // write bad block instead of block #1
-  auto block_path =
-      fs::path{block_store_path} / FlatFile::id_to_name(block_n);
+  auto block_path = fs::path{block_store_path} / FlatFile::id_to_name(block_n);
   fs::ofstream block_file(block_path);
   std::string content = R"({
   "testcase": [],

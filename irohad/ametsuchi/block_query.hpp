@@ -22,8 +22,8 @@
 #include <cmath>
 #include <rxcpp/rx-observable.hpp>
 
-#include "common/types.hpp"
 #include "common/result.hpp"
+#include "common/types.hpp"
 #include "interfaces/iroha_internal/block.hpp"
 #include "interfaces/transaction.hpp"
 

@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef IROHA_FLAT_FILE_HPP
-#define IROHA_FLAT_FILE_HPP
+#ifndef IROHA_KV_STORAGE_HPP
+#define IROHA_KV_STORAGE_HPP
 
 #include <boost/optional.hpp>
 #include <string>
@@ -23,21 +23,21 @@ namespace iroha {
        * Type of storage key
        */
       using Identifier = uint32_t;
+      using Bytes = std::vector<uint8_t>;
 
       /**
        * Add entity with binary data
        * @param id - reference key
        * @param blob - data associated with key
        */
-      virtual bool add(Identifier id, const std::vector<uint8_t> &blob) = 0;
+      virtual bool add(Identifier id, const Bytes &blob) = 0;
 
       /**
        * Get data associated with
        * @param id - reference key
        * @return - blob, if exists
        */
-      virtual boost::optional<std::vector<uint8_t>> get(
-          Identifier id) const = 0;
+      virtual boost::optional<Bytes> get(Identifier id) const = 0;
 
       /**
        * @return folder of storage
@@ -45,7 +45,7 @@ namespace iroha {
       virtual std::string directory() const = 0;
 
       /**
-       * @return maximal not null key
+       * @return chronologically last not null key
        */
       virtual Identifier last_id() const = 0;
 
@@ -56,4 +56,4 @@ namespace iroha {
   }  // namespace ametsuchi
 }  // namespace iroha
 
-#endif  // IROHA_FLAT_FILE_HPP
+#endif  // IROHA_KV_STORAGE_HPP

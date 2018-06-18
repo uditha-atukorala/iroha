@@ -253,9 +253,9 @@ namespace iroha {
 
     class MockKeyValueStorage : public KeyValueStorage {
      public:
-      MOCK_METHOD2(add, bool(Identifier, const std::vector<uint8_t> &));
+      MOCK_METHOD2(add, bool(Identifier, const Bytes &));
       MOCK_CONST_METHOD1(get,
-                         boost::optional<std::vector<uint8_t>>(Identifier));
+                         boost::optional<Bytes>(Identifier));
       MOCK_CONST_METHOD0(directory, std::string(void));
       MOCK_CONST_METHOD0(last_id, Identifier(void));
       MOCK_METHOD0(dropAll, void(void));
