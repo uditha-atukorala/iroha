@@ -51,20 +51,24 @@ namespace iroha {
               auto &command,
               int command_index) -> expected::Result<void, std::string> {
         auto account = wsv_->getAccount(tx_creator).value();
-        if (not boost::apply_visitor(*command_validator_, command.get())) {
-          return expected::makeError(
-              boost::format("stateful validation error: could not validate "
-                            "command %s with index %d"
-                            % command.toString() % command_index));
-        }
-        auto result = boost::apply_visitor(*command_executor_, command.get());
-        return result.match(
-            [](expected::Value<void> &v) { return {}; },
-            [](expected::Error<ExecutionError> &e) {
-              return expected::makeError(boost::format(
-                  "stateful validation error: could not execute command with index %d: %s"
-                  % command_index % e.error.toString()));
-            });
+        // Validate command
+        boost::apply_visitor(*command_validator_, command.get())
+            .match([](expected::Value<void> &) {},
+                   [](expected::Error<CommandError> &error) {
+                     return expected::makeError(boost::format(
+                         "stateful validation error: could not validate "
+                         "command with index %d: %s"s
+                         % command_index % error.error.toString()));
+                   });
+        // Execute command
+        boost::apply_visitor(*command_executor_, command.get())
+            .match([](expected::Value<void> &) { return {}; },
+                   [](expected::Error<CommandError> &e) {
+                     return expected::makeError(
+                         boost::format("stateful validation error: could not "
+                                       "execute command with index %d: %s"s
+                                       % command_index % e.error.toString()));
+                   });
       };
       transaction_->exec("SAVEPOINT savepoint_;");
 

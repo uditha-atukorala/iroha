@@ -60,7 +60,7 @@ namespace iroha {
                         : expected::makeError(boost::format(
                               "stateful validator error: not enough "
                               "signatures; account's quorum %d, transaction's "
-                              "signatures amount %d"
+                              "signatures amount %d"s
                               % account.value.quorum()
                               % boost::size(tx.signatures())));
                   },
