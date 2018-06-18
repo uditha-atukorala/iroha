@@ -103,8 +103,6 @@ namespace iroha {
                                         const auto &top_hash) { return true; });
             log_->info("block inserted: {}", inserted);
             commit(std::move(storage.value));
-            notifier_.get_subscriber().on_next(
-                std::shared_ptr<shared_model::interface::Block>(clone(block)));
           },
           [&](expected::Error<std::string> &error) {
             log_->error(error.error);
