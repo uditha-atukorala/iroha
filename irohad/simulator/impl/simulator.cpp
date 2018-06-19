@@ -84,9 +84,13 @@ namespace iroha {
       temporaryStorageResult.match(
           [&](expected::Value<std::unique_ptr<ametsuchi::TemporaryWsv>>
                   &temporaryStorage) {
-            auto validated_proposal =
+            auto verified_proposal_and_errors =
                 validator_->validate(proposal, *temporaryStorage.value);
-            notifier_.get_subscriber().on_next(validated_proposal);
+
+            // Though it now returns both proposal and errors, for the sake of
+            // "middle" P.R. we only use proposal
+            notifier_.get_subscriber().on_next(verified_proposal_and_errors.first);
+            log_->error(verified_proposal_and_errors.second);
           },
           [&](expected::Error<std::string> &error) {
             log_->error(error.error);

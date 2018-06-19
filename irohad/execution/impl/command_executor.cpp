@@ -16,6 +16,7 @@
  */
 
 #include <boost/mpl/contains.hpp>
+#include <string>
 
 #include "execution/command_executor.hpp"
 
@@ -28,6 +29,7 @@
 using namespace shared_model::detail;
 using namespace shared_model::interface::permissions;
 using namespace shared_model::proto::permissions;
+using namespace std::literals::string_literals;
 
 namespace iroha {
 
@@ -1048,7 +1050,7 @@ namespace iroha {
           "is valid command validation failed: size of rest signatories "
           "becomes less than the quorum; account id "
               + command.accountId(),
-          command_name);)
+          command_name);
     }
 
     return {};
@@ -1085,17 +1087,21 @@ namespace iroha {
     }
     if (command.newQuorum() <= 0 or command.newQuorum() >= 10) {
       return makeCommandError(
-          "is valid command validation failed: new quorum is out of bounds; "
-          "value is "
-              + command.newQuorum(),
+          (boost::format("is valid command validation failed: new quorum is "
+                         "out of bounds; "
+                         "value is %d")
+           % command.newQuorum())
+              .str(),
           command_name);
     }
     // You can't remove if size of rest signatories less than the quorum
     if (signatories.value().size() < command.newQuorum()) {
       return makeCommandError(
-          "is valid command validation failed: new quorum size is greater than "
-          "the signatories amount; "
-              + command.newQuorum() + " vs "s + signatories.value().size(),
+          (boost::format("is valid command validation failed: new quorum size "
+                         "is greater than "
+                         "the signatories amount; %d vs %d")
+           % command.newQuorum() % signatories.value().size())
+              .str(),
           command_name);
     }
 
@@ -1124,10 +1130,12 @@ namespace iroha {
     // Amount is formed wrong
     if (command.amount().precision() > asset.value()->precision()) {
       return makeCommandError(
-          "is valid command validation failed: precision of command's asset "
-          "amount is greater than the actual asset's one; "
-              + command.amount().precision() + " vs "s
-              + asset.value()->precision(),
+          (boost::format(
+               "is valid command validation failed: precision of command's "
+               "asset "
+               "amount is greater than the actual asset's one; %d vs %d")
+           % command.amount().precision() % asset.value()->precision())
+              .str(),
           command_name);
     }
     auto account_asset =
@@ -1146,13 +1154,14 @@ namespace iroha {
           command_name);
     }
     // Balance in your wallet should be at least amount of transfer
-    if (not compareAmount(account_asset.value()->balance(), command.amount())
-        >= 0) {
+    if (compareAmount(account_asset.value()->balance(), command.amount()) < 0) {
       return makeCommandError(
-          "is valid command validation failed: not enough balance on account "
-          "with id "
-          + command.srcAccountId() + "; transfer amount " + command.amount()
-          + ", balance " + account_asset.value()->balance());
+          (boost::format("is valid command validation failed: not enough "
+                         "balance on account "
+                         "with id %s; transfer amount %s, balance %s")
+           % command.srcAccountId() % command.amount().toStringRepr()
+           % account_asset.value()->balance().toStringRepr())
+              .str(),
           command_name);
     }
     return {};

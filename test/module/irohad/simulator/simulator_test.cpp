@@ -139,7 +139,7 @@ TEST_F(SimulatorTest, ValidWhenPreviousBlock) {
   EXPECT_CALL(*query, getTopBlockHeight())
       .WillOnce(Return(1));
 
-  EXPECT_CALL(*validator, validate(_, _)).WillOnce(Return(proposal));
+  EXPECT_CALL(*validator, validate(_, _)).WillOnce(Return(std::make_pair(proposal, "")));
 
   EXPECT_CALL(*ordering_gate, on_proposal())
       .WillOnce(Return(rxcpp::observable<>::empty<

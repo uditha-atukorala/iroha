@@ -143,8 +143,8 @@ namespace iroha {
 
     template <typename CommandType>
     CommandResult operator()(const CommandType &command) {
-      return hasPermissions(command, *queries, creator_account_id)
-          and isValid(command, *queries, creator_account_id);
+      return hasPermissions(command, *queries, creator_account_id) |
+          [&] { return isValid(command, *queries, creator_account_id); };
     }
 
     void setCreatorAccountId(const shared_model::interface::types::AccountIdType

@@ -17,8 +17,10 @@
 
 #include "validation/impl/stateful_validator_impl.hpp"
 
+#include <boost/format.hpp>
 #include <boost/range/adaptor/filtered.hpp>
 #include <boost/range/adaptor/transformed.hpp>
+#include <string>
 #include "builders/protobuf/proposal.hpp"
 #include "common/result.hpp"
 #include "validation/utils.hpp"
@@ -30,67 +32,78 @@ namespace iroha {
       log_ = logger::log("SFV");
     }
 
-    StatefulValidatorImpl::ProposalAndErrors StatefulValidatorImpl::validate(
+    shared_model::interface::types::VerifiedProposalAndErrors
+    StatefulValidatorImpl::validate(
         const shared_model::interface::Proposal &proposal,
         ametsuchi::TemporaryWsv &temporaryWsv) {
+      using namespace std::string_literals;
+
       log_->info("transactions in proposal: {}",
                  proposal.transactions().size());
-      auto checking_transaction = [](const auto &tx, auto &queries) {
+      auto checking_transaction = [this](const auto &tx, auto &queries) {
         return expected::Result<void, std::string>(
-            [&]() -> expected::Result<void, std::string> {
+            [&]() -> expected::Result<
+                         std::shared_ptr<shared_model::interface::Account>,
+                         std::string> {
               // Check if tx creator has account
               auto account = queries.getAccount(tx.creatorAccountId());
               if (account) {
                 return expected::makeValue(*account);
-              } else {
-                return expected::makeError(
-                    boost::format("stateful validator error: could not fetch "
-                                  "account with id %d"
-                                  % tx.creatorAccountId()));
               }
-            } | [&](const auto &result) -> expected::Result<void, std::string> {
-              // Check if account has quorum to execute transaction
-              result.match(
-                  [&](expected::Value<shared_model::interface::Account> account)
-                      -> expected::Result<void, std::string> {
-                    return boost::size(tx.signatures())
-                            >= account.value.quorum()
-                        ? expected::makeValue(
-                              queries.getSignatories(tx.creatorAccountId()))
-                        : expected::makeError(boost::format(
-                              "stateful validator error: not enough "
-                              "signatures; account's quorum %d, transaction's "
-                              "signatures amount %d"s
-                              % account.value.quorum()
-                              % boost::size(tx.signatures())));
-                  },
-                  [](expected::Error<std::string> error) { return error; });
-            } | [&](const auto &result) -> expected::Result<void, std::string> {
+              return expected::makeError(
+                  (boost::format("stateful validator error: could not fetch "
+                                 "account with id %s")
+                   % tx.creatorAccountId())
+                      .str());
+            }() |
+                [&](const auto &account)
+                      -> expected::Result<
+                             std::vector<
+                                 shared_model::interface::types::PubkeyType>,
+                             std::string> {
+              // Check if account has signatories and quorum to execute
+              // transaction
+              if (boost::size(tx.signatures()) >= account->quorum()) {
+                auto signatories =
+                    queries.getSignatories(tx.creatorAccountId());
+                if (signatories) {
+                  return expected::makeValue(*signatories);
+                }
+                return expected::makeError(
+                    "stateful validator error: could not fetch signatories of "
+                    "account "
+                    + tx.creatorAccountId());
+              }
+              return expected::makeError(
+                  (boost::format("stateful validator error: not enough "
+                                 "signatures; account's quorum %d, "
+                                 "transaction's "
+                                 "signatures amount %d")
+                   % account->quorum() % boost::size(tx.signatures()))
+                      .str());
+            } | [this, &tx](const auto &signatories)
+                          -> expected::Result<void, std::string> {
               // Check if signatures in transaction are account
               // signatory
-              result.match(
-                  [&](expected::Value<
-                      std::vector<shared_model::interface::types::PubkeyType>>
-                          signatories) {
-                    signaturesSubset(tx.signatures(), signatories)
-                        ? {}
-                        : expected::makeError(formSignaturesErrorMsg(
-                              tx.signatures(), signatories.value));
-                  },
-                  [](expected::Error<std::string> error) { return error; });
+              if (signaturesSubset(tx.signatures(), signatories)) {
+                return {};
+              }
+              return expected::makeError(
+                  formSignaturesErrorMsg(tx.signatures(), signatories));
             });
       };
 
       // Filter only valid transactions and accumulate errors
       auto errors_log = ""s;
-      auto filter = [&temporaryWsv, checking_transaction](auto &tx) {
-        return temporaryWsv.apply(tx, checking_transaction)
-            .match([](expected::Value<void>) { return true; },
-                   [&errors_log](expected::Error<std::string> error) {
-                     errors_log += error.error + "\n"s;
-                     return false;
-                   });
-      };
+      auto filter =
+          [&temporaryWsv, checking_transaction, &errors_log](auto &tx) {
+            return temporaryWsv.apply(tx, checking_transaction)
+                .match([](expected::Value<void> &) { return true; },
+                       [&errors_log](expected::Error<std::string> &error) {
+                         errors_log += error.error + "\n"s;
+                         return false;
+                       });
+          };
 
       // TODO: kamilsa IR-1010 20.02.2018 rework validation logic, so that this
       // cast is not needed and stateful validator does not know about the
@@ -113,25 +126,27 @@ namespace iroha {
       return std::make_pair(std::make_shared<decltype(validated_proposal)>(
                                 validated_proposal.getTransport()),
                             errors_log);
-    }
+    }  // namespace validation
 
     std::string StatefulValidatorImpl::formSignaturesErrorMsg(
         const shared_model::interface::types::SignatureRangeType &signatures,
         const std::vector<shared_model::interface::types::PubkeyType>
             &signatories) {
-      auto signatures_string = ""s, signatories_string = ""s;
+      using namespace std::string_literals;
+
+      std::string signatures_string = "", signatories_string = "";
       for (const auto &signature : signatures) {
-        signatures_string += signature.publicKey() + "\n"s;
+        signatures_string += signature.publicKey().toString() + "\n"s;
       }
       for (const auto &signatory : signatories) {
         signatories_string += signatory.toString() + "\n"s;
       }
-      return boost::format(
-                 "stateful validator error: signatures in transaction are not "
-                 "account signatories:\n"
-                 "signatures' public keys: %s\n"
-                 "signatories: %s"
-                 % signatures_string % signatories_string)
+      return (boost::format(
+                  "stateful validator error: signatures in transaction are not "
+                  "account signatories:\n"
+                  "signatures' public keys: %s\n"
+                  "signatories: %s")
+              % signatures_string % signatories_string)
           .str();
     }
   }  // namespace validation

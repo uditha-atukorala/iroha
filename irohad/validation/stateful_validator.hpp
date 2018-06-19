@@ -27,14 +27,6 @@ namespace iroha {
      */
     class StatefulValidator {
      public:
-      /**
-       * Type to represent verified proposal and errors of txs, which were
-       * filtered
-       */
-      using ProposalAndErrors =
-          std::pair<std::shared_ptr<shared_model::interface::Proposal>,
-                    std::string>;
-
       virtual ~StatefulValidator() = default;
 
       /**
@@ -46,7 +38,7 @@ namespace iroha {
        * all changes after removing wsv will be ignored
        * @return proposal with valid transactions
        */
-      virtual ProposalAndErrors validate(
+      virtual shared_model::interface::types::VerifiedProposalAndErrors validate(
           const shared_model::interface::Proposal &proposal,
           ametsuchi::TemporaryWsv &temporaryWsv) = 0;
     };

@@ -51,29 +51,41 @@ namespace iroha {
               auto &command,
               int command_index) -> expected::Result<void, std::string> {
         auto account = wsv_->getAccount(tx_creator).value();
-        // Validate command
-        boost::apply_visitor(*command_validator_, command.get())
-            .match([](expected::Value<void> &) {},
-                   [](expected::Error<CommandError> &error) {
-                     return expected::makeError(boost::format(
-                         "stateful validation error: could not validate "
-                         "command with index %d: %s"s
-                         % command_index % error.error.toString()));
-                   });
-        // Execute command
-        boost::apply_visitor(*command_executor_, command.get())
-            .match([](expected::Value<void> &) { return {}; },
-                   [](expected::Error<CommandError> &e) {
-                     return expected::makeError(
-                         boost::format("stateful validation error: could not "
-                                       "execute command with index %d: %s"s
-                                       % command_index % e.error.toString()));
-                   });
+        // Validate and execute command
+        return boost::apply_visitor(*command_validator_, command.get())
+                   .match(
+                       [](expected::Value<void> &)
+                           -> expected::Result<void, std::string> {
+                         return {};
+                       },
+                       [command_index](expected::Error<CommandError> &error) -> expected::Result<void, std::string> {
+                         return expected::makeError(
+                             ((boost::format("stateful validation error: could "
+                                             "not validate "
+                                             "command with index %d: %s")
+                               % command_index % error.error.toString()))
+                                 .str());
+                       })
+            |
+            [this, command_index, &command] {
+              return boost::apply_visitor(*command_executor_, command.get())
+                  .match(
+                      [](expected::Value<void> &)
+                          -> expected::Result<void, std::string> { return {}; },
+                      [command_index](expected::Error<CommandError> &e) -> expected::Result<void, std::string> {
+                        return expected::makeError(
+                            ((boost::format(
+                                  "stateful validation error: could not "
+                                  "execute command with index %d: %s")
+                              % command_index % e.error.toString()))
+                                .str());
+                      });
+            };
       };
       transaction_->exec("SAVEPOINT savepoint_;");
 
       auto tx_failed = false;
-      auto errors_log = ""s;
+      std::string errors_log = "";
       auto failed_cmd_processor =
           [&errors_log, &tx_failed](expected::Error<std::string> error) {
             errors_log += error.error + '\n';
@@ -81,7 +93,7 @@ namespace iroha {
           };
 
       const auto &commands = tx.commands();
-      for (auto i = 0; i < commands.size(); ++i) {
+      for (size_t i = 0; i < commands.size(); ++i) {
         execute_command(commands[i], i)
             .match([](expected::Value<void>) {}, failed_cmd_processor);
       };

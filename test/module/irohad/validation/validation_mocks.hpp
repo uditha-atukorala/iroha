@@ -29,7 +29,7 @@ namespace iroha {
     class MockStatefulValidator : public validation::StatefulValidator {
      public:
       MOCK_METHOD2(validate,
-                   std::shared_ptr<shared_model::interface::Proposal>(
+                   shared_model::interface::types::VerifiedProposalAndErrors(
                        const shared_model::interface::Proposal &,
                        ametsuchi::TemporaryWsv &));
     };

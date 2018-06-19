@@ -40,7 +40,7 @@ namespace iroha {
        * all changes after removing wsv will be ignored
        * @return proposal with valid transactions
        */
-      ProposalAndErrors validate(
+      shared_model::interface::types::VerifiedProposalAndErrors validate(
           const shared_model::interface::Proposal &proposal,
           ametsuchi::TemporaryWsv &temporaryWsv) override;
 
@@ -50,7 +50,7 @@ namespace iroha {
       std::string formSignaturesErrorMsg(
           const shared_model::interface::types::SignatureRangeType &signatures,
           const std::vector<shared_model::interface::types::PubkeyType>
-          &signatories);
+              &signatories);
     };
   }  // namespace validation
 }  // namespace iroha

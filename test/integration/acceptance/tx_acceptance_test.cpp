@@ -41,7 +41,7 @@ class AcceptanceTest : public AcceptanceFixture {
  */
 TEST_F(AcceptanceTest, NonExistentCreatorAccountId) {
   auto tx = TestUnsignedTransactionBuilder()
-                .createdTime(iroha::time::now())
+                .createdTime(getUniqueTime())
                 .creatorAccountId(kNonUser)
                 .addAssetQuantity(kAdmin, kAsset, "1.0")
                 .quorum(1)

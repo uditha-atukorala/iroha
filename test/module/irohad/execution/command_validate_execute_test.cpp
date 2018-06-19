@@ -46,8 +46,8 @@ std::unique_ptr<shared_model::interface::Command> buildCommand(
 template <class T>
 std::shared_ptr<T> getConcreteCommand(
     const std::unique_ptr<shared_model::interface::Command> &command) {
-  return clone(boost::apply_visitor(
-      framework::SpecifiedVisitor<T>(), command->get()));
+  return clone(
+      boost::apply_visitor(framework::SpecifiedVisitor<T>(), command->get()));
 }
 
 class CommandValidateExecuteTest : public ::testing::Test {
@@ -137,18 +137,20 @@ class CommandValidateExecuteTest : public ::testing::Test {
             });
   }
 
-  iroha::ExecutionResult validateAndExecute(
+  iroha::CommandResult validateAndExecute(
       const std::unique_ptr<shared_model::interface::Command> &command) {
     validator->setCreatorAccountId(creator->accountId());
 
-    if (boost::apply_visitor(*validator, command->get())) {
-      return execute(command);
-    }
-    return expected::makeError(
-        iroha::ExecutionError{"Validate", "validation of a command failed"});
+    return boost::apply_visitor(*validator, command->get())
+        .match([this,
+                &command](expected::Value<void> &) { return execute(command); },
+               [](const auto&) -> expected::Result<void, iroha::CommandError> {
+                 return expected::makeError(iroha::CommandError{
+                     "Validate", "validation of a command failed"});
+               });
   }
 
-  iroha::ExecutionResult execute(
+  iroha::CommandResult execute(
       const std::unique_ptr<shared_model::interface::Command> &command) {
     executor->setCreatorAccountId(creator->accountId());
     return boost::apply_visitor(*executor, command->get());
@@ -160,9 +162,9 @@ class CommandValidateExecuteTest : public ::testing::Test {
   }
 
   /// Returns error from result or throws error in case result contains value
-  iroha::ExecutionResult::ErrorType checkErrorCase(
-      const iroha::ExecutionResult &result) {
-    return boost::get<iroha::ExecutionResult::ErrorType>(result);
+  iroha::CommandResult::ErrorType checkErrorCase(
+      const iroha::CommandResult &result) {
+    return boost::get<iroha::CommandResult::ErrorType>(result);
   }
 
   const std::string kMaxAmountStr =
@@ -1354,8 +1356,7 @@ TEST_F(TransferAssetTest, ValidWhenCreatorHasPermission) {
   EXPECT_CALL(*wsv_query, getAccountAsset(transfer_asset->destAccountId(), _))
       .WillOnce(Return(boost::none));
 
-  EXPECT_CALL(*wsv_query,
-              getAccountAsset(transfer_asset->srcAccountId(), _))
+  EXPECT_CALL(*wsv_query, getAccountAsset(transfer_asset->srcAccountId(), _))
       .Times(2)
       .WillRepeatedly(Return(src_wallet));
   EXPECT_CALL(*wsv_query, getAsset(transfer_asset->assetId()))
