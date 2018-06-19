@@ -1,4 +1,4 @@
-def doDebugBuild(coverageEnabled=false) {
+def doDebugBuild() {
   def setter = load ".jenkinsci/set-parallelism.groovy"
   def parallelism = setter.setParallelism(params.PARALLELISM)
   def cmakeOptions = ""
@@ -28,10 +28,6 @@ def doDebugBuild(coverageEnabled=false) {
   sh "cmake --build build -- -j${parallelism}"
   sh "ccache --show-stats"
 }
-
-def doPreCoverageStep() {
-  sh "cmake --build build --target coverage.init.info"
-}
   
 def doTestStep(testList) {
   sh """
@@ -46,25 +42,6 @@ def doTestStep(testList) {
   if (testExitCode != 0) {
     currentBuild.result = "UNSTABLE"
   }
-}
- 
-def doPostCoverageSonarStep() {
-  sh "cmake --build build --target cppcheck"
-  sh """
-      sonar-scanner \
-        -Dsonar.github.disableInlineComments \
-        -Dsonar.github.repository='hyperledger/iroha' \
-        -Dsonar.analysis.mode=preview \
-        -Dsonar.login=${SONAR_TOKEN} \
-        -Dsonar.projectVersion=${BUILD_TAG} \
-        -Dsonar.github.oauth=${SORABOT_TOKEN}
-    """
-}
-
-def doPostCoverageCoberturaStep() {
-  sh "cmake --build build --target coverage.info"
-  sh "python /tmp/lcov_cobertura.py build/reports/coverage.info -o build/reports/coverage.xml"
-  cobertura autoUpdateHealth: false, autoUpdateStability: false, coberturaReportFile: '**/build/reports/coverage.xml', conditionalCoverageTargets: '75, 50, 0', failUnhealthy: false, failUnstable: false, lineCoverageTargets: '75, 50, 0', maxNumberOfBuilds: 50, methodCoverageTargets: '75, 50, 0', onlyStable: false, zoomCoverageChart: false
 }
 
 return this

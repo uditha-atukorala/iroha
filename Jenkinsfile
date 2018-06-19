@@ -1,34 +1,22 @@
-// Overall pipeline looks like the following
-//
-// |--Pre-build jobs--|----BUILD----|--Pre-Coverage--|------Test------|-Post Coverage-|--Build rest--|
-//                      |             |                |                |                |
-//                      |-> Linux     |-> lcov         |-> Linux        |-> lcov         |-> gen docs
-//                      |-> ARMv7                      |-> ARMv7        |-> SonarQube    |-> bindings
-//                      |-> ARMv8                      |-> ARMv8
-//                      |-> MacOS                      |-> MacOS
-//
-// NOTE: In build stage we differentiate only platforms in pipeline scheme. Build/Release is filtered inside the platform
-
 properties([parameters([
   choice(choices: 'Debug\nRelease', description: '', name: 'BUILD_TYPE'),
   booleanParam(defaultValue: true, description: '', name: 'Linux'),
   booleanParam(defaultValue: false, description: '', name: 'ARMv7'),
   booleanParam(defaultValue: false, description: '', name: 'ARMv8'),
   booleanParam(defaultValue: false, description: '', name: 'MacOS'),
-  booleanParam(defaultValue: false, description: 'Whether it is a triggered build', name: 'Nightly'),
-  booleanParam(defaultValue: false, description: 'Whether to merge this PR to target after success build', name: 'Merge_PR'),
-  booleanParam(defaultValue: false, description: 'Whether to force building coverage', name: 'Coverage'),
-  booleanParam(defaultValue: false, description: 'Whether build docs or not', name: 'Doxygen'),
-  booleanParam(defaultValue: false, description: 'Whether build Java bindings', name: 'JavaBindings'),
+  booleanParam(defaultValue: false, description: 'Scheduled triggered build', name: 'Nightly'),
+  booleanParam(defaultValue: false, description: 'Merge this PR to target after success build', name: 'Merge_PR'),
+  booleanParam(defaultValue: false, description: 'Force building code coverage', name: 'Coverage'),
+  booleanParam(defaultValue: false, description: 'Build docs', name: 'Doxygen'),
+  booleanParam(defaultValue: false, description: 'Build Java bindings', name: 'JavaBindings'),
   choice(choices: 'Release\nDebug', description: 'Java Bindings Build Type', name: 'JBBuildType'),
-  booleanParam(defaultValue: false, description: 'Whether build Python bindings', name: 'PythonBindings'),
+  booleanParam(defaultValue: false, description: 'Build Python bindings', name: 'PythonBindings'),
   choice(choices: 'Release\nDebug', description: 'Python Bindings Build Type', name: 'PBBuildType'),
   choice(choices: 'python3\npython2', description: 'Python Bindings Version', name: 'PBVersion'),
-  booleanParam(defaultValue: false, description: 'Whether build Android bindings', name: 'AndroidBindings'),
+  booleanParam(defaultValue: false, description: 'Build Android bindings', name: 'AndroidBindings'),
   choice(choices: '26\n25\n24\n23\n22\n21\n20\n19\n18\n17\n16\n15\n14', description: 'Android Bindings ABI Version', name: 'ABABIVersion'),
   choice(choices: 'Release\nDebug', description: 'Android bindings build type', name: 'ABBuildType'),
   choice(choices: 'arm64-v8a\narmeabi-v7a\narmeabi\nx86_64\nx86', description: 'Android bindings platform', name: 'ABPlatform'),
-  booleanParam(defaultValue: false, description: 'Build docs', name: 'Doxygen'),
   string(defaultValue: '4', description: 'How much parallelism should we exploit. "4" is optimal for machines with modest amount of memory and at least 4 cores', name: 'PARALLELISM')])])
 
 pipeline {
@@ -137,8 +125,7 @@ pipeline {
             script {
               if ( params.BUILD_TYPE == 'Debug' || params.Merge_PR ) {
                 def debugBuild = load ".jenkinsci/debug-build.groovy"
-                def coverage = load ".jenkinsci/selected-branches-coverage.groovy"
-                debugBuild.doDebugBuild( (!params.Linux && !params.MacOS && !params.ARMv8 || !params.Merge_PR) ? coverage.selectedBranchesCoverage() : false )
+                debugBuild.doDebugBuild()
               }
               else {
                 def releaseBuild = load ".jenkinsci/release-build.groovy"
@@ -176,7 +163,7 @@ pipeline {
               if ( params.BUILD_TYPE == 'Debug' || params.Merge_PR ) {
                 def debugBuild = load ".jenkinsci/debug-build.groovy"
                 def coverage = load ".jenkinsci/selected-branches-coverage.groovy"
-                debugBuild.doDebugBuild( (!params.Linux && !params.MacOS || !params.Merge_PR) ? coverage.selectedBranchesCoverage() : false )
+                debugBuild.doDebugBuild()
               }
               else {
                 def releaseBuild = load ".jenkinsci/release-build.groovy"
@@ -218,7 +205,7 @@ pipeline {
               if ( params.BUILD_TYPE == 'Debug' || params.Merge_PR ) {
                 def macDebugBuild = load ".jenkinsci/mac-debug-build.groovy"
                 def coverage = load ".jenkinsci/selected-branches-coverage.groovy"
-                macDebugBuild.doDebugBuild( (!params.Linux || !params.Merge_PR) ? coverage.selectedBranchesCoverage() : false )
+                macDebugBuild.doDebugBuild()
               }
               else {
                 def macReleaseBuild = load ".jenkinsci/mac-release-build.groovy"
@@ -259,13 +246,11 @@ pipeline {
           }
         }
       }
+      agent { label 'x86_64_aws_cov'}
       steps {
         script {
-          def cov_platform = load '.jenkinsci/choose-platform.groovy'
-          node(cov_platform.choosePlatform()) {
-            coverage = load env.NODE_NAME.contains('mac') ? '.jenkinsci/mac-debug-build.groovy' : '.jenkinsci/debug-build.groovy'
-            coverage.doPreCoverageStep()
-          }
+          def coverage = load '.jenkinsci/debug-build.groovy'
+          coverage.doPreCoverageStep()
         }
       }
     }
@@ -422,13 +407,11 @@ pipeline {
               }
             }
           }
+          agent { label 'x86_64_aws_cov' }
           steps {
             script {
-              def cov_platform = load '.jenkinsci/choose-platform.groovy'
-              node(cov_platform.choosePlatform()) {
-                coverage = load env.NODE_NAME.contains('mac') ? '.jenkinsci/mac-debug-build.groovy' : '.jenkinsci/debug-build.groovy'
-                coverage.doPostCoverageCoberturaStep()
-              }
+              def coverage = load '.jenkinsci/debug-build.groovy'
+              coverage.doPostCoverageCoberturaStep()
             }
           }
         }
@@ -452,13 +435,11 @@ pipeline {
               }
             }
           }
+          agent { label 'x86_64_aws_cov' }
           steps {
             script {
-              def cov_platform = load '.jenkinsci/choose-platform.groovy'
-              node(cov_platform.choosePlatform()) {
-                coverage = load env.NODE_NAME.contains('mac') ? '.jenkinsci/mac-debug-build.groovy' : '.jenkinsci/debug-build.groovy'
-                coverage.doPostCoverageSonarStep()
-              }
+              def coverage = load '.jenkinsci/debug-build.groovy'
+              coverage.doPostCoverageSonarStep()
             }
           }
         }
@@ -504,10 +485,8 @@ pipeline {
           when {
             beforeAgent true
             anyOf {
-              allOf {
-                expression { return params.Doxygen }
-                expression { return GIT_LOCAL_BRANCH ==~ /(master|develop|trunk)/ }
-              }
+              expression { return params.Doxygen }
+              expression { return GIT_LOCAL_BRANCH ==~ /(master|develop)/ }
               allOf {
                 expression { return env.CHANGE_ID != null }
                 expression { return env.GIT_PREVIOUS_COMMIT != null }
@@ -648,13 +627,13 @@ pipeline {
             post.cleanUp()
           }
         }
-        if (params.ARMv8 || params.Merge_PR) {
+        if (params.ARMv8) {
           node ('armv8') {
             post.cleanUp()
             clean.doDockerCleanup()
           }
         }
-        if (params.ARMv7 || params.Merge_PR) {
+        if (params.ARMv7) {
           node ('armv7') {
             post.cleanUp()
             clean.doDockerCleanup()

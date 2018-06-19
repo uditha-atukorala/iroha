@@ -53,10 +53,10 @@ def checkMergeAcceptance() {
 		jsonResponseReview = slurper.parseText(jsonResponseReview)
 		if (jsonResponseReview.size() > 0) {
 			jsonResponseReview.each {
-				if ("${it.state}" == GithubPRStatus.APPROVED.toString()) {
+				if (it.state.toString() == GithubPRStatus.APPROVED.toString()) {
 					approvalsRequired -= 1
 				}
-				if ("${it.state}" == GithubPRStatus.CHANGES_REQUESTED.toString()) {
+				if (it.state.toString() == GithubPRStatus.CHANGES_REQUESTED.toString()) {
 					return false
 				}
 			}
@@ -106,7 +106,7 @@ def getPullRequestReviewers() {
 	jsonResponseReview = slurper.parseText(jsonResponseReview)
 	if (jsonResponseReview.size() > 0) {
 		jsonResponseReview.each {
-			if ("${it.state}" in [GithubPRStatus.APPROVED.toString(), GithubPRStatus.CHANGES_REQUESTED.toString()]) {
+			if (it.state.toString() in [GithubPRStatus.APPROVED.toString(), GithubPRStatus.CHANGES_REQUESTED.toString()]) {
 				ghUsersList = ghUsersList.concat("@${it.user.login} ")
 			}
 		}

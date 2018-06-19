@@ -73,16 +73,16 @@ def doDebugBuild(coverageEnabled=false) {
      }
 }
 
+// do not implement any checks as coverage runs only on x86_64
 def doPreCoverageStep() {
-  if ( env.NODE_NAME.contains('x86_64') ) {
-    sh "docker load -i ${JENKINS_DOCKER_IMAGE_DIR}/${DOCKER_IMAGE_FILE}"
-  }
+  sh "docker load -i ${JENKINS_DOCKER_IMAGE_DIR}/${DOCKER_IMAGE_FILE}"
   def iC = docker.image("${DOCKER_AGENT_IMAGE}")
   iC.inside() {
     sh "cmake --build build --target coverage.init.info"
   }
 }
 
+// run specified test categories
 def doTestStep(testList) {
   if (env.NODE_NAME.contains('x86_64')) {
     sh "docker load -i ${JENKINS_DOCKER_IMAGE_DIR}/${DOCKER_IMAGE_FILE}"
@@ -102,7 +102,6 @@ def doTestStep(testList) {
       + " -e IROHA_POSTGRES_USER=${env.IROHA_POSTGRES_USER}"
       + " -e IROHA_POSTGRES_PASSWORD=${env.IROHA_POSTGRES_PASSWORD}"
       + " --network=${env.IROHA_NETWORK}") {
-        sh "wget --tries=1 ${env.IROHA_POSTGRES_HOST}:${env.IROHA_POSTGRES_PORT}"
         def testExitCode = sh(script: """cd build && ctest --output-on-failure -R '${testList}' """, returnStatus: true)
         if (testExitCode != 0) {
           currentBuild.result = "UNSTABLE"
@@ -111,21 +110,22 @@ def doTestStep(testList) {
     }
 }
 
+// do cobertura analysis
+// same as for doPreCoverageStep()
 def doPostCoverageCoberturaStep() {
-  if (env.NODE_NAME.contains('x86_64')) {
-    sh "docker load -i ${JENKINS_DOCKER_IMAGE_DIR}/${DOCKER_IMAGE_FILE}"
-  }
+  sh "docker load -i ${JENKINS_DOCKER_IMAGE_DIR}/${DOCKER_IMAGE_FILE}"
   def iC = docker.image("${DOCKER_AGENT_IMAGE}")
   iC.inside() {
-    def step = load ".jenkinsci/mac-debug-build.groovy"
-    step.doPostCoverageCoberturaStep()
+    sh "cmake --build build --target coverage.info"
+    sh "python /tmp/lcov_cobertura.py build/reports/coverage.info -o build/reports/coverage.xml"
+    cobertura autoUpdateHealth: false, autoUpdateStability: false, coberturaReportFile: '**/build/reports/coverage.xml', conditionalCoverageTargets: '75, 50, 0', failUnhealthy: false, failUnstable: false, lineCoverageTargets: '75, 50, 0', maxNumberOfBuilds: 50, methodCoverageTargets: '75, 50, 0', onlyStable: false, zoomCoverageChart: false
   }
 }
 
+// do cppcheck analysis
+// same as for doPreCoverageStep()
 def doPostCoverageSonarStep() {
-  if (env.NODE_NAME.contains('x86_64')) {
-    sh "docker load -i ${JENKINS_DOCKER_IMAGE_DIR}/${DOCKER_IMAGE_FILE}"
-  }
+  sh "docker load -i ${JENKINS_DOCKER_IMAGE_DIR}/${DOCKER_IMAGE_FILE}"
   def iC = docker.image("${DOCKER_AGENT_IMAGE}")
   iC.inside() {
     sh "cmake --build build --target cppcheck"
