@@ -25,7 +25,18 @@ pipeline {
   			    println branch_ok
   			    println pr_ok
   			    println params.iroha
-  			    println env.MERGE_CONDITIONS
+  			    println MERGE_CONDITIONS
+  			}
+  		}
+  	}
+  	stage ('dry') {
+  		when {
+  			expression { return MERGE_CONDITIONS == "true" }
+  		}
+  		agent { label 'master' }
+  		steps {
+  			script {
+  				sh "echo good"
   			}
   		}
   	}
