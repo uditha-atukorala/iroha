@@ -1,6 +1,0 @@
-# Ignore everything
-*
-!.gitignore
-!.tx-example.py
-!prepare.sh
-!README.md
