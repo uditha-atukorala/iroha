@@ -26,6 +26,7 @@ pipeline {
   			    println pr_ok
   			    println params.iroha
   			    println MERGE_CONDITIONS
+  			    println (load "previous-commit.groovy").previousCommitOrCurrent()
   			}
   		}
   	}
