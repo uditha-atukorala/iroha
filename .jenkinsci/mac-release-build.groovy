@@ -19,7 +19,7 @@ def doReleaseBuild(coverageEnabled=false) {
       -Bbuild \
       -DCOVERAGE=OFF \
       -DPACKAGE_TGZ=ON \
-      -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_BUILD_TYPE=${params.build_type} \
       -DIROHA_VERSION=${env.IROHA_VERSION}
     
     cmake --build build --target package -- -j${parallelism}

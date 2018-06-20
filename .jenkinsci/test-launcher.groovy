@@ -11,7 +11,7 @@ def printRange(start, end) {
 
 // return tests list regex that will be launched by ctest
 def chooseTestType() {
-	if (params.Merge_PR) {
+	if (params.merge_pr) {
 		if (env.NODE_NAME.contains('x86_64')) {
 			// choose module, integration, system, cmake, regression tests
 			return printRange(TestTypes.module, TestTypes.regression)
@@ -21,7 +21,7 @@ def chooseTestType() {
 			return ""
 		}
 	}
-	if (params.Nightly) {
+	if (params.nightly) {
 		if (env.NODE_NAME.contains('x86_64')) {
 			// choose all tests
 			return printRange(TestTypes.MIN_VALUE, TestTypes.MAX_VALUE)

@@ -21,7 +21,7 @@ def doDebugBuild() {
       -DTESTING=ON \
       -H. \
       -Bbuild \
-      -DCMAKE_BUILD_TYPE=${params.BUILD_TYPE} \
+      -DCMAKE_BUILD_TYPE=${params.build_type} \
       -DIROHA_VERSION=${env.IROHA_VERSION} \
       ${cmakeOptions}
   """

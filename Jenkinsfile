@@ -1,22 +1,25 @@
 properties([parameters([
-  choice(choices: 'Debug\nRelease', description: '', name: 'BUILD_TYPE'),
-  booleanParam(defaultValue: true, description: '', name: 'Linux'),
-  booleanParam(defaultValue: false, description: '', name: 'ARMv7'),
-  booleanParam(defaultValue: false, description: '', name: 'ARMv8'),
-  booleanParam(defaultValue: false, description: '', name: 'MacOS'),
-  booleanParam(defaultValue: false, description: 'Scheduled triggered build', name: 'Nightly'),
-  booleanParam(defaultValue: false, description: 'Merge this PR to target after success build', name: 'Merge_PR'),
-  booleanParam(defaultValue: false, description: 'Force building code coverage', name: 'Coverage'),
-  booleanParam(defaultValue: false, description: 'Build docs', name: 'Doxygen'),
+  booleanParam(defaultValue: true, description: 'Build `iroha`', name: 'iroha'),
+  booleanParam(defaultValue: false, description: 'Build `bindings`', name: 'bindings'),
+  booleanParam(defaultValue: true, description: '', name: 'x86_64_linux'),
+  booleanParam(defaultValue: false, description: '', name: 'armv7_linux'),
+  booleanParam(defaultValue: false, description: '', name: 'armv8_linux'),
+  booleanParam(defaultValue: true, description: '', name: 'x86_64_macos'),
+  booleanParam(defaultValue: false, description: '', name: 'x86_64_win'),
+  booleanParam(defaultValue: false, description: 'Build coverage', name: 'coverage'),
+  booleanParam(defaultValue: false, description: 'Merge this PR to target after success build', name: 'merge_pr'),
+  booleanParam(defaultValue: false, description: 'Scheduled nightly build', name: 'nightly'),
+  choice(choices: 'Debug\nRelease', description: 'Iroha build type', name: 'build_type'),
   booleanParam(defaultValue: false, description: 'Build Java bindings', name: 'JavaBindings'),
-  choice(choices: 'Release\nDebug', description: 'Java Bindings Build Type', name: 'JBBuildType'),
+  choice(choices: 'Release\nDebug', description: 'Java bindings build type', name: 'JBBuildType'),
   booleanParam(defaultValue: false, description: 'Build Python bindings', name: 'PythonBindings'),
-  choice(choices: 'Release\nDebug', description: 'Python Bindings Build Type', name: 'PBBuildType'),
-  choice(choices: 'python3\npython2', description: 'Python Bindings Version', name: 'PBVersion'),
+  choice(choices: 'Release\nDebug', description: 'Python bindings build type', name: 'PBBuildType'),
+  choice(choices: 'python3\npython2', description: 'Python bindings version', name: 'PBVersion'),
   booleanParam(defaultValue: false, description: 'Build Android bindings', name: 'AndroidBindings'),
   choice(choices: '26\n25\n24\n23\n22\n21\n20\n19\n18\n17\n16\n15\n14', description: 'Android Bindings ABI Version', name: 'ABABIVersion'),
   choice(choices: 'Release\nDebug', description: 'Android bindings build type', name: 'ABBuildType'),
   choice(choices: 'arm64-v8a\narmeabi-v7a\narmeabi\nx86_64\nx86', description: 'Android bindings platform', name: 'ABPlatform'),
+  booleanParam(defaultValue: false, description: 'Build docs', name: 'Doxygen'),
   string(defaultValue: '4', description: 'How much parallelism should we exploit. "4" is optimal for machines with modest amount of memory and at least 4 cores', name: 'PARALLELISM')])])
 
 pipeline {
@@ -39,7 +42,9 @@ pipeline {
     DOCKER_AGENT_IMAGE = ''
     DOCKER_IMAGE_FILE = ''
     WORKSPACE_PATH = ''
-    PREVIOUS_COMMIT = ''
+    MERGE_CONDITIONS_SATISFIED = ''
+    REST_PR_CONDITIONS_SATISFIED = ''
+    INITIAL_COMMIT_PR = ''
   }
 
   options {
@@ -54,7 +59,8 @@ pipeline {
       steps {
         script {
           load ".jenkinsci/enums.groovy"
-          GIT_COMMITER_EMAIL = sh(script: """git --no-pager show -s --format='%ae' ${env.GIT_COMMIT}""", returnStdout: true).trim()
+          def preBuildRoutine = load ".jenkinsci/pre-build.groovy"
+          preBuildRoutine.prepare()
           if (GIT_LOCAL_BRANCH != "develop") {
             def builds = load ".jenkinsci/cancel-builds-same-job.groovy"
             builds.cancelSameJobBuilds()
@@ -64,31 +70,21 @@ pipeline {
     }
     stage('Build') {
       parallel {
-        stage ('Linux') {
+        stage ('x86_64_linux') {
           when {
             beforeAgent true
             anyOf {
-              expression { return params.Linux }
-              allOf {
-                expression { return env.CHANGE_ID != null }
-                expression { return env.GIT_PREVIOUS_COMMIT != null }
-                expression { return env.CHANGE_TARGET ==~ /(master|develop|trunk)/ }
-                expression { return params.Merge_PR }
-              }
+              expression { return params.x86_64_linux }
+              expression { return MERGE_CONDITIONS_SATISFIED == "true" }
             }
           }
           agent { label 'x86_64_aws_build' }
           steps {
             script {
               def debugBuild = load ".jenkinsci/debug-build.groovy"
-              def coverage = load ".jenkinsci/selected-branches-coverage.groovy"
+              def coverage = load ".jenkinsci/build-coverage.groovy"
               if (params.BUILD_TYPE == 'Debug') {
-                if (params.Merge_PR && env.CHANGE_TARGET ==~ /master/) {
-                  debugBuild.doDebugBuild(true)
-                }
-                else {
-                  debugBuild.doDebugBuild(coverage.selectedBranchesCoverage())
-                }
+                debugBuild.doDebugBuild(coverage.checkCoverageConditions())
               }
               if (params.BUILD_TYPE == 'Release') {
                 def releaseBuild = load ".jenkinsci/release-build.groovy"
@@ -107,23 +103,18 @@ pipeline {
             }
           }
         }
-        stage('ARMv7') {
+        stage('armv7_linux') {
           when {
             beforeAgent true
             anyOf {
-              expression { return params.ARMv7 }
-              // allOf {
-              //   expression { return env.CHANGE_ID != null }
-              //   expression { return env.GIT_PREVIOUS_COMMIT != null }
-              //   expression { return env.CHANGE_TARGET ==~ /(master|develop|trunk)/ }
-              //   expression { return params.Merge_PR }
-              // }
+              expression { return params.armv7_linux }
+              // expression { return MERGE_CONDITIONS_SATISFIED == "true" }
             }
           }
           agent { label 'armv7' }
           steps {
             script {
-              if ( params.BUILD_TYPE == 'Debug' || params.Merge_PR ) {
+              if (params.BUILD_TYPE == 'Debug') {
                 def debugBuild = load ".jenkinsci/debug-build.groovy"
                 debugBuild.doDebugBuild()
               }
@@ -144,25 +135,19 @@ pipeline {
             }
           }
         }
-        stage('ARMv8') {
+        stage('armv8_linux') {
           when {
             beforeAgent true
             anyOf {
-              expression { return params.ARMv8 }
-              // allOf {
-              //   expression { return env.CHANGE_ID != null }
-              //   expression { return env.GIT_PREVIOUS_COMMIT != null }
-              //   expression { return env.CHANGE_TARGET ==~ /(master|develop|trunk)/ }
-              //   expression { return params.Merge_PR }
-              // }
+              expression { return params.armv8_linux }
+              // expression { return MERGE_CONDITIONS_SATISFIED == "true" }
             }
           }
           agent { label 'armv8' }
           steps {
             script {
-              if ( params.BUILD_TYPE == 'Debug' || params.Merge_PR ) {
+              if ( params.BUILD_TYPE == 'Debug') {
                 def debugBuild = load ".jenkinsci/debug-build.groovy"
-                def coverage = load ".jenkinsci/selected-branches-coverage.groovy"
                 debugBuild.doDebugBuild()
               }
               else {
@@ -186,25 +171,16 @@ pipeline {
           when {
             beforeAgent true
             anyOf {
-              allOf {
-                expression { return env.CHANGE_ID != null }
-                expression { return !env.GIT_PREVIOUS_COMMIT }
-              }
-              allOf {
-                expression { return env.CHANGE_ID != null }
-                expression { return env.GIT_PREVIOUS_COMMIT != null }
-                expression { return env.CHANGE_TARGET ==~ /(master|develop|trunk)/ }
-                expression { return params.Merge_PR }
-              }
-              expression { return params.MacOS }
+              expression { return INITIAL_COMMIT_PR == "true" }
+              expression { return MERGE_CONDITIONS_SATISFIED == "true" }
+              expression { return params.x86_64_macos }
             }
           }
           agent { label 'mac' }
           steps {
             script {
-              if ( params.BUILD_TYPE == 'Debug' || params.Merge_PR ) {
+              if (params.BUILD_TYPE == 'Debug') {
                 def macDebugBuild = load ".jenkinsci/mac-debug-build.groovy"
-                def coverage = load ".jenkinsci/selected-branches-coverage.groovy"
                 macDebugBuild.doDebugBuild()
               }
               else {
@@ -229,17 +205,9 @@ pipeline {
     stage('Pre-Coverage') {
       when {
         anyOf {
-          expression { params.Coverage }  // by request
-          allOf {
-            expression { return env.CHANGE_ID }
-            expression { return !env.GIT_PREVIOUS_COMMIT }
-          }
-          allOf {
-            expression { return env.CHANGE_ID != null }
-            expression { return env.GIT_PREVIOUS_COMMIT != null }
-            expression { return env.CHANGE_TARGET ==~ /(master|develop|trunk)/ }
-            expression { return params.Merge_PR }
-          }
+          expression { params.coverage }  // by request
+          expression { return INITIAL_COMMIT_PR == "true" }
+          expression { return MERGE_CONDITIONS_SATISFIED == "true" }
           allOf {
             expression { return params.BUILD_TYPE == 'Debug' }
             expression { return env.GIT_LOCAL_BRANCH ==~ /master/ }
@@ -260,17 +228,12 @@ pipeline {
         expression { return params.BUILD_TYPE == "Debug" }
       }
       parallel {
-        stage('Linux') {
+        stage('x86_64_linux') {
           when {
             beforeAgent true
             anyOf {
-              expression { return params.Linux }
-              allOf {
-                expression { return env.CHANGE_ID != null }
-                expression { return env.GIT_PREVIOUS_COMMIT != null }
-                expression { return env.CHANGE_TARGET ==~ /(master|develop|trunk)/ }
-                expression { return params.Merge_PR }
-              }
+              expression { return params.x86_64_linux }
+              expression { return MERGE_CONDITIONS_SATISFIED == "true" }
             }
           }
           agent { label 'x86_64_aws_test' }
@@ -290,17 +253,12 @@ pipeline {
             }
           }
         }
-        stage('ARMv7') {
+        stage('armv7_linux') {
           when {
             beforeAgent true
             anyOf {
-              expression { return params.ARMv7 }
-              // allOf {
-              //   expression { return env.CHANGE_ID != null }
-              //   expression { return env.GIT_PREVIOUS_COMMIT != null }
-              //   expression { return env.CHANGE_TARGET ==~ /(master|develop|trunk)/ }
-              //   expression { return params.Merge_PR }
-              // }
+              expression { return params.armv7_linux }
+              // expression { return MERGE_CONDITIONS_SATISFIED == "true" }
             }
           }
           agent { label 'armv7' }
@@ -320,17 +278,12 @@ pipeline {
             }
           }
         }
-        stage('ARMv8') {
+        stage('armv8_linux') {
           when {
             beforeAgent true
             anyOf {
-              expression { return params.ARMv8 }
-              // allOf {
-              //   expression { return env.CHANGE_ID != null }
-              //   expression { return env.GIT_PREVIOUS_COMMIT != null }
-              //   expression { return env.CHANGE_TARGET ==~ /(master|develop|trunk)/ }
-              //   expression { return params.Merge_PR }
-              // }
+              expression { return params.armv8_linux }
+              // expression { return MERGE_CONDITIONS_SATISFIED == "true" }
             }
           }
           agent { label 'armv8' }
@@ -350,21 +303,13 @@ pipeline {
             }
           }
         }
-        stage('MacOS') {
+        stage('x86_64_macos') {
           when {
             beforeAgent true
             anyOf {
-              allOf {
-                expression { return env.CHANGE_ID }
-                expression { return !env.GIT_PREVIOUS_COMMIT }
-              }
-              allOf {
-                expression { return env.CHANGE_ID != null }
-                expression { return env.GIT_PREVIOUS_COMMIT != null }
-                expression { return env.CHANGE_TARGET ==~ /(master|develop|trunk)/ }
-                expression { return params.Merge_PR }
-              }
-              expression { return params.MacOS }
+              expression { return INITIAL_COMMIT_PR == "true" }
+              expression { return MERGE_CONDITIONS_SATISFIED == "true" }
+              expression { return params.x86_64_macos }
             }
           }
           agent { label 'mac' }
@@ -386,27 +331,20 @@ pipeline {
       }
     }
     stage('Post-Coverage') {
+      when {
+        beforeAgent true
+        anyOf {
+          expression { params.coverage }  // by request
+          expression { return INITIAL_COMMIT_PR == "true" }
+          expression { return MERGE_CONDITIONS_SATISFIED == "true" }
+          allOf {
+            expression { return params.BUILD_TYPE == 'Debug' }
+            expression { return env.GIT_LOCAL_BRANCH ==~ /master/ }
+          }
+        }
+      }
       parallel {
         stage('lcov_cobertura') {
-          when {
-            beforeAgent true
-            anyOf {
-              expression { params.Coverage }  // by request
-              allOf {
-                expression { return env.CHANGE_ID }
-                expression { return !env.GIT_PREVIOUS_COMMIT }
-              }
-              allOf {
-                expression { return env.CHANGE_ID != null }
-                expression { return env.GIT_PREVIOUS_COMMIT != null }
-                expression { return params.Merge_PR }
-              }
-              allOf {
-                expression { return params.BUILD_TYPE == 'Debug' }
-                expression { return env.GIT_LOCAL_BRANCH ==~ /master/ }
-              }
-            }
-          }
           agent { label 'x86_64_aws_cov' }
           steps {
             script {
@@ -416,25 +354,6 @@ pipeline {
           }
         }
         stage('sonarqube') {
-          when {
-            beforeAgent true
-            anyOf {
-              expression { params.Coverage }  // by request
-              allOf {
-                expression { return env.CHANGE_ID }
-                expression { return !env.GIT_PREVIOUS_COMMIT }
-              }
-              allOf {
-                expression { return env.CHANGE_ID != null }
-                expression { return env.GIT_PREVIOUS_COMMIT != null }
-                expression { return params.Merge_PR }
-              }
-              allOf {
-                expression { return params.BUILD_TYPE == 'Debug' }
-                expression { return env.GIT_LOCAL_BRANCH ==~ /master/ }
-              }
-            }
-          }
           agent { label 'x86_64_aws_cov' }
           steps {
             script {
@@ -447,20 +366,16 @@ pipeline {
     }
     stage ('Build rest') {
       parallel {
-        stage('Build release') {
+        stage('linux_release') {
           when {
             beforeAgent true
             anyOf {
               allOf {
+                expression { return params.x86_64_linux }
                 expression { return params.BUILD_TYPE == 'Debug' }
                 expression { return env.GIT_LOCAL_BRANCH ==~ /(develop|master|trunk)/ }
               }
-              allOf {
-                expression { return env.CHANGE_ID != null }
-                expression { return env.GIT_PREVIOUS_COMMIT != null }
-                expression { return env.CHANGE_TARGET ==~ /(master|develop)/ }
-                expression { return params.Merge_PR }
-              }
+              expression { return MERGE_CONDITIONS_SATISFIED == "true" }
             }
           }
           agent { label 'x86_64_aws_build' }
@@ -481,18 +396,13 @@ pipeline {
             }
           }
         }
-        stage('Build docs') {
+        stage('docs') {
           when {
             beforeAgent true
             anyOf {
               expression { return params.Doxygen }
               expression { return GIT_LOCAL_BRANCH ==~ /(master|develop)/ }
-              allOf {
-                expression { return env.CHANGE_ID != null }
-                expression { return env.GIT_PREVIOUS_COMMIT != null }
-                expression { return env.CHANGE_TARGET ==~ /(master|develop)/ }
-                expression { return params.Merge_PR }
-              }
+              expression { return REST_PR_CONDITIONS_SATISFIED == "true" }
             }
           }
           agent { label 'x86_64_aws_cov' }
@@ -506,19 +416,12 @@ pipeline {
             }
           }
         }
-        stage('Build bindings') {
+        stage('bindings') {
           when {
             beforeAgent true
             anyOf {
-              expression { return params.PythonBindings }
-              expression { return params.JavaBindings }
-              expression { return params.AndroidBindings }
-              allOf {
-                expression { return env.CHANGE_ID != null }
-                expression { return env.GIT_PREVIOUS_COMMIT != null }
-                expression { return env.CHANGE_TARGET ==~ /(master|develop)/ }
-                expression { return params.Merge_PR }
-              }
+              expression { return params.bindings }
+              expression { return REST_PR_CONDITIONS_SATISFIED == "true" }
             }
           }
           agent { label 'x86_64_aws_build' }
@@ -595,6 +498,45 @@ pipeline {
             }
           }
         }
+        stage ('windows_bindings') {
+          when {
+            beforeAgent true
+            expression { return params.x86_64_win }
+            expression { return REST_PR_CONDITIONS_SATISFIED == "true" }
+          }
+          agent { label 'win' }
+          steps {
+            script {
+              def bindings = load ".jenkinsci/bindings.groovy"
+              if (params.JavaBindings) {
+                bindings.doJavaBindings('windows', params.JBBuildType)
+              }
+              if (params.PythonBindings) {
+                bindings.doPythonBindings('windows', params.PBBuildType)
+              }
+            }
+          }
+          post {
+            success {
+              script {
+                def artifacts = load ".jenkinsci/artifacts.groovy"
+                def commit = env.GIT_COMMIT
+                if (params.JavaBindings) {
+                  javaBindingsFilePaths = [ '/tmp/${GIT_COMMIT}/bindings-artifact/java-bindings-*.zip' ]
+                  artifacts.uploadArtifacts(javaBindingsFilePaths, '/iroha/bindings/java')
+                }
+                if (params.PythonBindings) {
+                  pythonBindingsFilePaths = [ '/tmp/${GIT_COMMIT}/bindings-artifact/python-bindings-*.zip' ]
+                  artifacts.uploadArtifacts(pythonBindingsFilePaths, '/iroha/bindings/python')
+                }
+              }
+            }
+            cleanup {
+              sh "rm -rf /tmp/${env.GIT_COMMIT}"
+              cleanWs()
+            }
+          }
+        }
       }
     }
   }
@@ -602,7 +544,7 @@ pipeline {
     success {
       script {
         // merge pull request if everything is ok and clean stale docker images stored on EFS
-        if ( params.Merge_PR ) {
+        if ( params.merge_pr ) {
           def merge = load ".jenkinsci/github-api.groovy"
           if (merge.mergePullRequest()) {
             currentBuild.result = "SUCCESS"
@@ -622,24 +564,24 @@ pipeline {
         def notify = load ".jenkinsci/notifications.groovy"
         notify.notifyBuildResults()
 
-        if (params.Linux || params.Merge_PR) {
+        if (params.x86_64_linux || params.merge_pr) {
           node ('x86_64_aws_test') {
             post.cleanUp()
           }
         }
-        if (params.ARMv8) {
+        if (params.armv8_linux) {
           node ('armv8') {
             post.cleanUp()
             clean.doDockerCleanup()
           }
         }
-        if (params.ARMv7) {
+        if (params.armv7_linux) {
           node ('armv7') {
             post.cleanUp()
             clean.doDockerCleanup()
           }
         }
-        if (params.MacOS || params.Merge_PR) {
+        if (params.x86_64_macos || params.merge_pr) {
           node ('mac') {
             post.macCleanUp()
           }

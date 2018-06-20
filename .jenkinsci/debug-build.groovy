@@ -7,7 +7,7 @@ def doDebugBuild(coverageEnabled=false) {
   def setter = load ".jenkinsci/set-parallelism.groovy"
   def parallelism = setter.setParallelism(params.PARALLELISM)
   def platform = sh(script: 'uname -m', returnStdout: true).trim()
-  PREVIOUS_COMMIT = pCommit.previousCommitOrCurrent()
+  def prevCommit = pCommit.previousCommitOrCurrent()
   // params are always null unless job is started
   // this is the case for the FIRST build only.
   // So just set this to same value as default.
@@ -15,7 +15,7 @@ def doDebugBuild(coverageEnabled=false) {
 
   def iC = dPullOrBuild.dockerPullOrUpdate("${platform}-develop-build",
                                            "${env.GIT_RAW_BASE_URL}/${env.GIT_COMMIT}/docker/develop/Dockerfile",
-                                           "${env.GIT_RAW_BASE_URL}/${PREVIOUS_COMMIT}/docker/develop/Dockerfile",
+                                           "${env.GIT_RAW_BASE_URL}/${prevCommit}/docker/develop/Dockerfile",
                                            "${env.GIT_RAW_BASE_URL}/develop/docker/develop/Dockerfile",
                                            ['PARALLELISM': parallelism])
   if (GIT_LOCAL_BRANCH == 'develop' && manifest.manifestSupportEnabled()) {
@@ -64,7 +64,7 @@ def doDebugBuild(coverageEnabled=false) {
             -DTESTING=ON \
             -H. \
             -Bbuild \
-            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_BUILD_TYPE=${params.build_type} \
             -DIROHA_VERSION=${env.IROHA_VERSION} \
             ${cmakeOptions}
         """

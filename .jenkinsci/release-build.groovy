@@ -31,7 +31,7 @@ def doReleaseBuild() {
       cmake \
         -H. \
         -Bbuild \
-        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_BUILD_TYPE=${params.build_type} \
         -DIROHA_VERSION=${env.IROHA_VERSION} \
         -DPACKAGE_DEB=ON \
         -DPACKAGE_TGZ=ON \
