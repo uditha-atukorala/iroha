@@ -19,7 +19,10 @@ pipeline {
   		agent { label 'master' }
   		steps {
   			script {
-  				sh "[[ ! -z ${PREVIOUS_COMMIT} ]] && echo w"
+  				sh "[[ ! -z ${env.PREVIOUS_COMMIT} ]] && echo w"
+  				println env.CHANGE_TARGET
+  				println env.GIT_PREVIOUS_COMMIT env.GIT_COMMIT 
+  				println params.iroha
   			}
   		}
   	}
