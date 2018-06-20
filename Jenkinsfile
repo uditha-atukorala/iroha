@@ -21,13 +21,7 @@ pipeline {
   			script {
   			    def branch_ok = env.CHANGE_TARGET ==~ /(master|develop|trunk)/ ? "true" : "false"
   			    def pr_ok = env.CHANGE_ID && env.GIT_PREVIOUS_COMMIT ? "true" : "false"
-
-  			    //def pr_ok = sh(script: """[[ -z ${env.PREVIOUS_COMMIT} && ! -z ${env.CHANGE_ID} ]]""", returnStatus: true)
-  			    MERGE_CONDITIONS = (branch_ok == "true" && pr_ok == "true" && params.iroha) ? "true" : "false"
-  			    println branch_ok
-  			    println pr_ok
-  			    println params.iroha
-  			    println env.MERGE_CONDITIONS
+  			    env.MERGE_CONDITIONS = (branch_ok == "true" && pr_ok == "true" && params.iroha) ? "true" : "false"
   			}
   		}
   	}
