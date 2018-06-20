@@ -5,7 +5,7 @@ properties([parameters([
 pipeline {
 	environment {
 		PREVIOUS_COMMIT = ''
-		RESULT = ''
+		MERGE_CONDITIONS = ''
 	}
 
 	options {
@@ -19,11 +19,16 @@ pipeline {
   		agent { label 'master' }
   		steps {
   			script {
-  				sh "[[ ! -z ${env.PREVIOUS_COMMIT} ]] && echo w"
-  				println env.CHANGE_TARGET
-  				println env.GIT_PREVIOUS_COMMIT 
-  				println env.GIT_COMMIT 
-  				println params.iroha
+  			    def pCommit = load "previous-commit.groovy"
+  			    def branch_ok = env.CHANGE_TARGET ==~ /(master|develop|trunk)/ ? "true" : "false"
+  			    def pr_ok = env.CHANGE_ID && pCommit.previousCommitOrCurrent() != env.GIT_COMMIT ? : "true" : "false"
+
+  			    //def pr_ok = sh(script: """[[ -z ${env.PREVIOUS_COMMIT} && ! -z ${env.CHANGE_ID} ]]""", returnStatus: true)
+  			    MERGE_CONDITIONS = (branch_ok == "true" && pr_ok == "true" && params.iroha) ? "true" : "false"
+  			    println branch_ok
+  			    println pr_ok
+  			    println params.iroha
+  			    println env.MERGE_CONDITIONS
   			}
   		}
   	}
